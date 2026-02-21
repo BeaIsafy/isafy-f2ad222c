@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/AppLayout";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import Pipeline from "./pages/Pipeline";
+import LeadDetail from "./pages/LeadDetail";
 import Contacts from "./pages/Contacts";
 import Properties from "./pages/Properties";
 import CalendarPage from "./pages/CalendarPage";
@@ -29,6 +30,7 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pipeline" element={<Pipeline />} />
+            <Route path="/leads/:id" element={<LeadDetail />} />
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/calendar" element={<CalendarPage />} />
