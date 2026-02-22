@@ -1,13 +1,15 @@
 import { motion } from "framer-motion";
-import { Plus, Search, Flame, Thermometer, Snowflake, MessageCircle, CheckSquare, FileText, AlertTriangle, Clock, MoreHorizontal, Phone, CalendarPlus, XCircle } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
+import { LeadKanbanCard, type LeadCard } from "@/components/pipeline/LeadKanbanCard";
+import { LostReasonModal } from "@/components/pipeline/LostReasonModal";
+import { VisitScheduleModal } from "@/components/pipeline/VisitScheduleModal";
+import { notifyStageChange } from "@/components/pipeline/StageChangeToast";
 
 type PipelineType = "atendimento" | "captacao" | "pos_venda";
 
@@ -26,23 +28,7 @@ const pipelineConfigs: Record<PipelineType, { label: string; stages: string[] }>
   },
 };
 
-export interface LeadCard {
-  id: string;
-  name: string;
-  temp: "hot" | "warm" | "cold";
-  purpose: "Compra" | "Locação" | "Temporada";
-  minPrice: number;
-  maxPrice: number;
-  neighborhood: string;
-  broker: string;
-  brokerInitials: string;
-  lastInteraction: string;
-  daysWithoutUpdate: number;
-  hasPendingTask: boolean;
-  hasActiveProposal: boolean;
-}
-
-const mockLeads: Record<string, LeadCard[]> = {
+const initialLeads: Record<string, LeadCard[]> = {
   "Novo Lead": [
     { id: "1", name: "Carlos Mendes", temp: "warm", purpose: "Compra", minPrice: 400000, maxPrice: 600000, neighborhood: "Moema", broker: "Ana Costa", brokerInitials: "AC", lastInteraction: "Hoje", daysWithoutUpdate: 0, hasPendingTask: false, hasActiveProposal: false },
     { id: "2", name: "Fernanda Lima", temp: "hot", purpose: "Locação", minPrice: 3000, maxPrice: 5000, neighborhood: "Alphaville", broker: "João Silva", brokerInitials: "JS", lastInteraction: "Ontem", daysWithoutUpdate: 1, hasPendingTask: true, hasActiveProposal: false },
@@ -61,27 +47,93 @@ const mockLeads: Record<string, LeadCard[]> = {
   ],
 };
 
-const tempConfig = {
-  hot: { icon: Flame, label: "Quente", className: "bg-hot/10 text-hot border-hot/20" },
-  warm: { icon: Thermometer, label: "Morno", className: "bg-warning/10 text-warning border-warning/20" },
-  cold: { icon: Snowflake, label: "Frio", className: "bg-cold/10 text-cold border-cold/20" },
-};
-
-function formatPrice(value: number) {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
-}
-
-function getSLAClass(days: number) {
-  if (days >= 5) return "border-l-destructive";
-  if (days > 2) return "border-l-warning";
-  return "border-l-transparent";
-}
-
 const Pipeline = () => {
   const [activeType, setActiveType] = useState<PipelineType>("atendimento");
   const [search, setSearch] = useState("");
-  const config = pipelineConfigs[activeType];
+  const [leads, setLeads] = useState<Record<string, LeadCard[]>>(initialLeads);
   const navigate = useNavigate();
+  const config = pipelineConfigs[activeType];
+
+  // Modal state
+  const [lostModal, setLostModal] = useState<{ open: boolean; leadId: string; leadName: string; sourceStage: string; sourceIndex: number } | null>(null);
+  const [visitModal, setVisitModal] = useState<{ open: boolean; leadId: string; leadName: string; destStage: string } | null>(null);
+
+  // Pending move that needs confirmation
+  const [pendingMove, setPendingMove] = useState<{ lead: LeadCard; sourceStage: string; destStage: string; sourceIndex: number; destIndex: number } | null>(null);
+
+  const moveLead = useCallback((sourceStage: string, destStage: string, sourceIndex: number, destIndex: number) => {
+    setLeads((prev) => {
+      const next = { ...prev };
+      const sourceList = [...(next[sourceStage] || [])];
+      const destList = sourceStage === destStage ? sourceList : [...(next[destStage] || [])];
+      const [moved] = sourceList.splice(sourceIndex, 1);
+      if (!moved) return prev;
+      destList.splice(destIndex, 0, moved);
+      next[sourceStage] = sourceList;
+      if (sourceStage !== destStage) next[destStage] = destList;
+      return next;
+    });
+  }, []);
+
+  const onDragEnd = useCallback((result: DropResult) => {
+    const { source, destination } = result;
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    const sourceStage = source.droppableId;
+    const destStage = destination.droppableId;
+    const lead = leads[sourceStage]?.[source.index];
+    if (!lead) return;
+
+    // Rules for specific stages
+    if (destStage === "Perdido" && sourceStage !== "Perdido") {
+      // Require loss reason - store pending move
+      setPendingMove({ lead, sourceStage, destStage, sourceIndex: source.index, destIndex: destination.index });
+      setLostModal({ open: true, leadId: lead.id, leadName: lead.name, sourceStage, sourceIndex: source.index });
+      return;
+    }
+
+    if (destStage === "Visita Agendada" && sourceStage !== "Visita Agendada") {
+      // Show visit scheduling modal, but move the card immediately
+      moveLead(sourceStage, destStage, source.index, destination.index);
+      setVisitModal({ open: true, leadId: lead.id, leadName: lead.name, destStage });
+      return;
+    }
+
+    // Default move
+    moveLead(sourceStage, destStage, source.index, destination.index);
+
+    if (sourceStage !== destStage) {
+      notifyStageChange(lead.name, destStage);
+    }
+  }, [leads, moveLead]);
+
+  const handleLostConfirm = (reason: string, notes: string) => {
+    if (pendingMove) {
+      moveLead(pendingMove.sourceStage, pendingMove.destStage, pendingMove.sourceIndex, pendingMove.destIndex);
+      notifyStageChange(pendingMove.lead.name, "Perdido");
+      console.log("Lead perdido:", { leadId: pendingMove.lead.id, reason, notes });
+    }
+    setLostModal(null);
+    setPendingMove(null);
+  };
+
+  const handleLostCancel = () => {
+    setLostModal(null);
+    setPendingMove(null);
+  };
+
+  const handleVisitConfirm = (data: { date: string; time: string; notes: string }) => {
+    if (visitModal) {
+      notifyStageChange(visitModal.leadName, "Visita Agendada");
+      console.log("Visita criada:", { leadId: visitModal.leadId, ...data });
+    }
+    setVisitModal(null);
+  };
+
+  const handleVisitCancel = () => {
+    setVisitModal(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -119,125 +171,86 @@ const Pipeline = () => {
         <Input placeholder="Buscar no pipeline..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
-      {/* Kanban */}
-      <div className="overflow-x-auto pb-4">
-        <div className="flex gap-4" style={{ minWidth: config.stages.length * 290 }}>
-          {config.stages.map((stage, i) => {
-            const cards = (activeType === "atendimento" ? mockLeads[stage] : undefined) || [];
-            const filtered = cards.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
-            return (
-              <motion.div
-                key={stage}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-                className="w-[280px] shrink-0"
-              >
-                <div className="rounded-xl border border-border/50 bg-card p-3">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-foreground">{stage}</h3>
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[10px] font-bold text-muted-foreground">
-                      {filtered.length}
-                    </span>
-                  </div>
-                  <div className="space-y-2.5">
-                    {filtered.map((lead) => (
-                      <LeadKanbanCard key={lead.id} lead={lead} onClick={() => navigate(`/leads/${lead.id}`)} />
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+      {/* Kanban with DnD */}
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-4" style={{ minWidth: config.stages.length * 290 }}>
+            {config.stages.map((stage, i) => {
+              const cards = (activeType === "atendimento" ? leads[stage] : undefined) || [];
+              const filtered = cards.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
+              return (
+                <motion.div
+                  key={stage}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="w-[280px] shrink-0"
+                >
+                  <Droppable droppableId={stage}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={cn(
+                          "rounded-xl border border-border/50 bg-card p-3 transition-colors min-h-[120px]",
+                          snapshot.isDraggingOver && "border-primary/40 bg-primary/5"
+                        )}
+                      >
+                        <div className="mb-3 flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-foreground">{stage}</h3>
+                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[10px] font-bold text-muted-foreground">
+                            {filtered.length}
+                          </span>
+                        </div>
+                        <div className="space-y-2.5">
+                          {filtered.map((lead, index) => (
+                            <Draggable key={lead.id} draggableId={lead.id} index={index}>
+                              {(dragProvided, dragSnapshot) => (
+                                <div
+                                  ref={dragProvided.innerRef}
+                                  {...dragProvided.draggableProps}
+                                  {...dragProvided.dragHandleProps}
+                                  className={cn(
+                                    "transition-shadow",
+                                    dragSnapshot.isDragging && "shadow-lg ring-2 ring-primary/30 rounded-lg"
+                                  )}
+                                >
+                                  <LeadKanbanCard lead={lead} onClick={() => navigate(`/leads/${lead.id}`)} />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      </div>
+                    )}
+                  </Droppable>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      </DragDropContext>
+
+      {/* Modals */}
+      {lostModal && (
+        <LostReasonModal
+          open={lostModal.open}
+          leadName={lostModal.leadName}
+          onConfirm={handleLostConfirm}
+          onCancel={handleLostCancel}
+        />
+      )}
+      {visitModal && (
+        <VisitScheduleModal
+          open={visitModal.open}
+          leadName={visitModal.leadName}
+          onConfirm={handleVisitConfirm}
+          onCancel={handleVisitCancel}
+        />
+      )}
     </div>
   );
 };
-
-function LeadKanbanCard({ lead, onClick }: { lead: LeadCard; onClick: () => void }) {
-  const TempIcon = tempConfig[lead.temp].icon;
-  const slaClass = getSLAClass(lead.daysWithoutUpdate);
-
-  return (
-    <div
-      onClick={onClick}
-      className={cn(
-        "group cursor-pointer rounded-lg border border-border/40 border-l-[3px] bg-background p-3 shadow-card transition-all hover:shadow-card-hover",
-        slaClass
-      )}
-    >
-      {/* Top: Name + Temp badge */}
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold text-foreground leading-tight">{lead.name}</p>
-        <Badge variant="outline" className={cn("shrink-0 gap-1 text-[10px] px-1.5 py-0.5", tempConfig[lead.temp].className)}>
-          <TempIcon size={10} />
-          {tempConfig[lead.temp].label}
-        </Badge>
-      </div>
-
-      {/* Center: Purpose, Price, Neighborhood */}
-      <div className="mb-2.5 space-y-0.5">
-        <p className="text-xs text-muted-foreground">{lead.purpose} · {lead.neighborhood}</p>
-        <p className="text-xs font-medium text-foreground">
-          {formatPrice(lead.minPrice)} – {formatPrice(lead.maxPrice)}
-        </p>
-      </div>
-
-      {/* Bottom icons row */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <button onClick={(e) => { e.stopPropagation(); }} className="rounded p-1 text-muted-foreground hover:bg-success/10 hover:text-success transition-colors" title="WhatsApp">
-            <MessageCircle size={14} />
-          </button>
-          {lead.hasPendingTask && (
-            <span className="flex items-center gap-0.5 rounded bg-warning/10 px-1 py-0.5 text-[10px] font-medium text-warning">
-              <CheckSquare size={10} /> Tarefa
-            </span>
-          )}
-          {lead.hasActiveProposal && (
-            <span className="flex items-center gap-0.5 rounded bg-info/10 px-1 py-0.5 text-[10px] font-medium text-info">
-              <FileText size={10} /> Proposta
-            </span>
-          )}
-          {lead.daysWithoutUpdate >= 5 && (
-            <span className="flex items-center gap-0.5 rounded bg-destructive/10 px-1 py-0.5 text-[10px] font-medium text-destructive">
-              <AlertTriangle size={10} /> Risco
-            </span>
-          )}
-        </div>
-
-        {/* Quick actions */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <button className="rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-muted group-hover:opacity-100">
-              <MoreHorizontal size={14} />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem><MessageCircle size={14} className="mr-2" /> Abrir WhatsApp</DropdownMenuItem>
-            <DropdownMenuItem><CheckSquare size={14} className="mr-2" /> Criar Tarefa</DropdownMenuItem>
-            <DropdownMenuItem><FileText size={14} className="mr-2" /> Criar Proposta</DropdownMenuItem>
-            <DropdownMenuItem><CalendarPlus size={14} className="mr-2" /> Agendar Visita</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive"><XCircle size={14} className="mr-2" /> Marcar Perdido</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Footer: avatar + date */}
-      <div className="mt-2.5 flex items-center justify-between border-t border-border/30 pt-2">
-        <div className="flex items-center gap-1.5">
-          <Avatar className="h-5 w-5">
-            <AvatarFallback className="text-[8px] font-bold bg-primary/10 text-primary">{lead.brokerInitials}</AvatarFallback>
-          </Avatar>
-          <span className="text-[10px] text-muted-foreground">{lead.broker}</span>
-        </div>
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <Clock size={10} /> {lead.lastInteraction}
-        </span>
-      </div>
-    </div>
-  );
-}
 
 export default Pipeline;
