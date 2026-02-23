@@ -60,7 +60,7 @@ export function AppSidebar({
       <aside className="fixed left-0 top-0 z-40 flex h-screen w-[60px] flex-col items-center border-r border-sidebar-border bg-sidebar py-3">
         {/* Logo */}
         <Link to="/dashboard" className="mb-4 flex h-6 w-10 items-center justify-center">
-          <img src={logoIsafy} alt="ISAFY" className="h-6" />
+          <img alt="ISAFY" className="h-6" src="/lovable-uploads/452b857a-96d9-4bef-bc73-fa5da4890a86.jpg" />
         </Link>
 
         {/* Nav */}
