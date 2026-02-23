@@ -1,34 +1,40 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ChevronRight, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { PanelType } from "./AppSidebar";
+
+interface PanelItem {
+  label: string;
+  sub: string;
+  value: string;
+  path: string | null; // null = no navigation
+}
 
 const panelConfigs: Record<
   Exclude<PanelType, null>,
-  { title: string; items: { label: string; sub: string; value: string; path: string }[] }
+  { title: string; items: PanelItem[] }
 > = {
   pipeline: {
     title: "Visão Geral",
     items: [
       { label: "Funil Captação", sub: "Captação de Imóveis", value: "0", path: "/pipeline?type=captacao" },
-      { label: "Funil Vendas", sub: "Atendimento e Agenda", value: "9", path: "/pipeline?type=atendimento" },
-      { label: "Tarefas", sub: "Em aberto", value: "0", path: "/pipeline?type=pos_venda" },
+      { label: "Funil Atendimento", sub: "Atendimento e Agenda", value: "6", path: "/pipeline?type=atendimento" },
+      { label: "Funil Pós-Venda", sub: "Pós-Vendas", value: "0", path: "/pipeline?type=pos_venda" },
     ],
   },
   properties: {
     title: "Visão Geral",
     items: [
-      { label: "Total", sub: "Carteira de Imóveis", value: "7", path: "/properties" },
-      { label: "Total", sub: "Saldo em VGV", value: "R$9.200.000", path: "/properties" },
-      { label: "Comissão", sub: "Saldo em VGC", value: "R$552.000", path: "/properties" },
+      { label: "Total", sub: "Carteira de Imóveis", value: "7", path: null },
+      { label: "Total", sub: "Saldo em VGV", value: "R$9.200.000", path: null },
+      { label: "Comissão", sub: "Saldo em VGC", value: "R$552.000", path: null },
     ],
   },
   contacts: {
     title: "Visão Geral",
     items: [
-      { label: "Leads", sub: "Total de Leads", value: "9", path: "/contacts" },
-      { label: "Clientes", sub: "Total de Clientes", value: "0", path: "/contacts" },
-      { label: "Proprietários", sub: "Total de Proprietários", value: "0", path: "/contacts" },
+      { label: "Leads", sub: "Total de Leads", value: "3", path: "/contacts?type=lead" },
+      { label: "Clientes", sub: "Total de Clientes", value: "1", path: "/contacts?type=cliente" },
+      { label: "Proprietários", sub: "Total de Proprietários", value: "1", path: "/contacts?type=proprietario" },
     ],
   },
 };
@@ -41,6 +47,14 @@ export function SidebarSubPanel({
   onClose: () => void;
 }) {
   const config = panelConfigs[panel];
+  const navigate = useNavigate();
+
+  const handleItemClick = (item: PanelItem) => {
+    if (item.path) {
+      navigate(item.path);
+      onClose();
+    }
+  };
 
   return (
     <div className="fixed left-[60px] top-0 z-30 flex h-screen w-[220px] flex-col border-r border-sidebar-border bg-sidebar animate-in slide-in-from-left-2 duration-200">
@@ -58,10 +72,12 @@ export function SidebarSubPanel({
       {/* Items */}
       <div className="flex-1 space-y-1 px-3 pt-3 overflow-y-auto">
         {config.items.map((item, i) => (
-          <Link
+          <button
             key={i}
-            to={item.path}
-            className="flex items-center justify-between rounded-lg px-3 py-3 transition-colors hover:bg-sidebar-accent group"
+            onClick={() => handleItemClick(item)}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-3 transition-colors hover:bg-sidebar-accent group text-left ${
+              item.path ? "cursor-pointer" : "cursor-default"
+            }`}
           >
             <div className="min-w-0">
               <p className="text-sm font-semibold text-sidebar-foreground">{item.label}</p>
@@ -69,9 +85,9 @@ export function SidebarSubPanel({
             </div>
             <div className="flex items-center gap-1">
               <span className="text-sm font-bold text-sidebar-foreground">{item.value}</span>
-              <ChevronRight size={14} className="text-muted-foreground" />
+              {item.path && <ChevronRight size={14} className="text-muted-foreground" />}
             </div>
-          </Link>
+          </button>
         ))}
       </div>
 
