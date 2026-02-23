@@ -46,9 +46,8 @@ export function AppSidebar({
 }) {
   const location = useLocation();
 
-  const handleNavClick = (item: typeof navItems[0], e: React.MouseEvent) => {
+  const handleNavClick = (item: typeof navItems[0]) => {
     if (item.panel) {
-      e.preventDefault();
       onPanelToggle(activePanel === item.panel ? null : item.panel);
     } else {
       onPanelToggle(null);
@@ -74,7 +73,7 @@ export function AppSidebar({
                 <TooltipTrigger asChild>
                   <Link
                     to={item.path}
-                    onClick={(e) => handleNavClick(item, e)}
+                    onClick={() => handleNavClick(item)}
                     className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-xl transition-all",
                       active
