@@ -9,45 +9,46 @@ import {
   Settings,
   HelpCircle,
   User,
-  LogOut,
-} from "lucide-react";
+  LogOut } from
+"lucide-react";
 import logoIsafy from "@/assets/logo-isafy.png";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  TooltipTrigger } from
+"@/components/ui/tooltip";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", panel: null },
-  { label: "Pipeline", icon: Kanban, path: "/pipeline", panel: "pipeline" as const },
-  { label: "Imóveis", icon: Building2, path: "/properties", panel: "properties" as const },
-  { label: "Contatos", icon: Users, path: "/contacts", panel: "contacts" as const },
-  { label: "Agenda", icon: Calendar, path: "/calendar", panel: null },
-  { label: "Relatórios", icon: BarChart3, path: "/reports", panel: null },
-];
+{ label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", panel: null },
+{ label: "Pipeline", icon: Kanban, path: "/pipeline", panel: "pipeline" as const },
+{ label: "Imóveis", icon: Building2, path: "/properties", panel: "properties" as const },
+{ label: "Contatos", icon: Users, path: "/contacts", panel: "contacts" as const },
+{ label: "Agenda", icon: Calendar, path: "/calendar", panel: null },
+{ label: "Relatórios", icon: BarChart3, path: "/reports", panel: null }];
+
 
 const bottomItems = [
-  { label: "Suporte", icon: HelpCircle, path: "/support" },
-  { label: "Configurações", icon: Settings, path: "/settings" },
-  { label: "Perfil", icon: User, path: "/profile" },
-];
+{ label: "Suporte", icon: HelpCircle, path: "/support" },
+{ label: "Configurações", icon: Settings, path: "/settings" },
+{ label: "Perfil", icon: User, path: "/profile" }];
+
 
 export type PanelType = "pipeline" | "properties" | "contacts" | null;
 
 export function AppSidebar({
   activePanel,
-  onPanelToggle,
-}: {
-  activePanel: PanelType;
-  onPanelToggle: (panel: PanelType) => void;
-}) {
+  onPanelToggle
+
+
+
+}: {activePanel: PanelType;onPanelToggle: (panel: PanelType) => void;}) {
   const location = useLocation();
 
-  const handleNavClick = (item: typeof navItems[0]) => {
+  const handleNavClick = (item: typeof navItems[0], e: React.MouseEvent) => {
     if (item.panel) {
+      e.preventDefault();
       onPanelToggle(activePanel === item.panel ? null : item.panel);
     } else {
       onPanelToggle(null);
@@ -58,7 +59,7 @@ export function AppSidebar({
     <TooltipProvider delayDuration={200}>
       <aside className="fixed left-0 top-0 z-40 flex h-screen w-[60px] flex-col items-center border-r border-sidebar-border bg-sidebar py-3">
         {/* Logo */}
-        <Link to="/dashboard" className="mb-4 flex h-10 w-10 items-center justify-center">
+        <Link to="/dashboard" className="mb-4 flex h-6 w-10 items-center justify-center">
           <img src={logoIsafy} alt="ISAFY" className="h-7" />
         </Link>
 
@@ -66,29 +67,29 @@ export function AppSidebar({
         <nav className="flex flex-1 flex-col items-center gap-1">
           {navItems.map((item) => {
             const active =
-              location.pathname === item.path ||
-              (item.panel && activePanel === item.panel);
+            location.pathname === item.path ||
+            item.panel && activePanel === item.panel;
             return (
               <Tooltip key={item.path}>
                 <TooltipTrigger asChild>
                   <Link
                     to={item.path}
-                    onClick={() => handleNavClick(item)}
+                    onClick={(e) => handleNavClick(item, e)}
                     className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-xl transition-all",
-                      active
-                        ? "gradient-primary text-primary-foreground shadow-primary"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    )}
-                  >
+                      active ?
+                      "gradient-primary text-primary-foreground shadow-primary" :
+                      "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )}>
+
                     <item.icon size={20} />
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right">
                   {item.label}
                 </TooltipContent>
-              </Tooltip>
-            );
+              </Tooltip>);
+
           })}
         </nav>
 
@@ -104,19 +105,19 @@ export function AppSidebar({
                     onClick={() => onPanelToggle(null)}
                     className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-xl transition-all",
-                      active
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    )}
-                  >
+                      active ?
+                      "bg-sidebar-accent text-sidebar-accent-foreground" :
+                      "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )}>
+
                     <item.icon size={20} />
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right">
                   {item.label}
                 </TooltipContent>
-              </Tooltip>
-            );
+              </Tooltip>);
+
           })}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -133,6 +134,6 @@ export function AppSidebar({
           </div>
         </div>
       </aside>
-    </TooltipProvider>
-  );
+    </TooltipProvider>);
+
 }
