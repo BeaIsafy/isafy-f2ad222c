@@ -1,44 +1,42 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { AppSidebar } from "./AppSidebar";
-import { Menu } from "lucide-react";
+import { AppSidebar, type PanelType } from "./AppSidebar";
+import { SidebarSubPanel } from "./SidebarSubPanel";
+import { MobileBottomBar } from "./MobileBottomBar";
 import { cn } from "@/lib/utils";
 
 export function AppLayout() {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState<PanelType>(null);
+
+  const mainMargin = activePanel ? "lg:ml-[280px]" : "lg:ml-[60px]";
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-30 bg-foreground/20 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} />
+      {/* Desktop sidebar */}
+      <div className="hidden lg:block">
+        <AppSidebar activePanel={activePanel} onPanelToggle={setActivePanel} />
+        {activePanel && (
+          <SidebarSubPanel panel={activePanel} onClose={() => setActivePanel(null)} />
+        )}
+      </div>
+
+      {/* Click-away for sub panel */}
+      {activePanel && (
+        <div
+          className="fixed inset-0 z-20 hidden lg:block"
+          onClick={() => setActivePanel(null)}
+        />
       )}
 
-      {/* Sidebar - desktop */}
-      <div className="hidden lg:block">
-        <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
-      </div>
-
-      {/* Sidebar - mobile */}
-      <div className={cn("lg:hidden fixed z-40 transition-transform duration-300", mobileOpen ? "translate-x-0" : "-translate-x-full")}>
-        <AppSidebar collapsed={false} onToggle={() => setMobileOpen(false)} />
-      </div>
-
       {/* Main */}
-      <main className={cn("transition-all duration-300 min-h-screen", collapsed ? "lg:ml-[72px]" : "lg:ml-[260px]")}>
-        {/* Mobile header */}
-        <div className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md lg:hidden">
-          <button onClick={() => setMobileOpen(true)} className="rounded-md p-2 text-muted-foreground hover:bg-muted">
-            <Menu size={20} />
-          </button>
-          <span className="text-sm font-semibold text-gradient">ISAFY</span>
-        </div>
-
-        <div className="p-4 md:p-6 lg:p-8">
+      <main className={cn("transition-all duration-300 min-h-screen", mainMargin)}>
+        <div className="p-4 md:p-6 lg:p-8 pb-20 lg:pb-8">
           <Outlet />
         </div>
       </main>
+
+      {/* Mobile bottom bar */}
+      <MobileBottomBar />
     </div>
   );
 }
