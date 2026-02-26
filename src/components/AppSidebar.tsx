@@ -22,10 +22,10 @@ import {
 
 const navItems = [
 { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", panel: null },
+{ label: "Agenda", icon: Calendar, path: "/calendar", panel: null },
 { label: "Pipeline", icon: Kanban, path: "/pipeline", panel: "pipeline" as const },
 { label: "Imóveis", icon: Building2, path: "/properties", panel: "properties" as const },
 { label: "Contatos", icon: Users, path: "/contacts", panel: "contacts" as const },
-{ label: "Agenda", icon: Calendar, path: "/calendar", panel: null },
 { label: "Relatórios", icon: BarChart3, path: "/reports", panel: null }];
 
 
