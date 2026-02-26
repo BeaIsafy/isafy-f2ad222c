@@ -13,6 +13,7 @@ import { NewLeadModal } from "@/components/pipeline/NewLeadModal";
 import { NewCaptacaoModal } from "@/components/pipeline/NewCaptacaoModal";
 import { NewPosVendaModal } from "@/components/pipeline/NewPosVendaModal";
 import { notifyStageChange } from "@/components/pipeline/StageChangeToast";
+import { atendimentoLeads, captacaoLeads, posVendaLeads } from "@/data/pipelineMockData";
 
 type PipelineType = "captacao" | "atendimento" | "pos_venda";
 
@@ -36,23 +37,10 @@ const pipelineConfigs: Record<PipelineType, { label: string; stages: string[]; a
 
 const pipelineOrder: PipelineType[] = ["captacao", "atendimento", "pos_venda"];
 
-const initialLeads: Record<string, LeadCard[]> = {
-  "Novo Lead": [
-    { id: "1", name: "Carlos Mendes", temp: "warm", purpose: "Compra", minPrice: 400000, maxPrice: 600000, neighborhood: "Moema", broker: "Ana Costa", brokerInitials: "AC", lastInteraction: "Hoje", daysWithoutUpdate: 0, hasPendingTask: false, hasActiveProposal: false },
-    { id: "2", name: "Fernanda Lima", temp: "hot", purpose: "Locação", minPrice: 3000, maxPrice: 5000, neighborhood: "Alphaville", broker: "João Silva", brokerInitials: "JS", lastInteraction: "Ontem", daysWithoutUpdate: 1, hasPendingTask: true, hasActiveProposal: false },
-  ],
-  "Contato Inicial": [
-    { id: "3", name: "Roberto Silva", temp: "cold", purpose: "Compra", minPrice: 250000, maxPrice: 350000, neighborhood: "Vila Olímpia", broker: "Ana Costa", brokerInitials: "AC", lastInteraction: "Há 3 dias", daysWithoutUpdate: 3, hasPendingTask: false, hasActiveProposal: false },
-  ],
-  "Qualificação": [
-    { id: "4", name: "Patrícia Souza", temp: "hot", purpose: "Compra", minPrice: 1200000, maxPrice: 2000000, neighborhood: "Itaim Bibi", broker: "Marco Reis", brokerInitials: "MR", lastInteraction: "Há 6 dias", daysWithoutUpdate: 6, hasPendingTask: true, hasActiveProposal: false },
-  ],
-  "Visita Agendada": [
-    { id: "5", name: "Lucas Oliveira", temp: "warm", purpose: "Compra", minPrice: 800000, maxPrice: 1200000, neighborhood: "Jardins", broker: "João Silva", brokerInitials: "JS", lastInteraction: "Hoje", daysWithoutUpdate: 0, hasPendingTask: false, hasActiveProposal: true },
-  ],
-  "Proposta Enviada": [
-    { id: "6", name: "Maria Eduarda", temp: "hot", purpose: "Locação", minPrice: 4000, maxPrice: 6000, neighborhood: "Pinheiros", broker: "Ana Costa", brokerInitials: "AC", lastInteraction: "Ontem", daysWithoutUpdate: 1, hasPendingTask: false, hasActiveProposal: true },
-  ],
+const initialLeads: Record<PipelineType, Record<string, LeadCard[]>> = {
+  atendimento: atendimentoLeads,
+  captacao: captacaoLeads,
+  pos_venda: posVendaLeads,
 };
 
 const Pipeline = () => {
@@ -62,7 +50,7 @@ const Pipeline = () => {
     typeParam && pipelineOrder.includes(typeParam) ? typeParam : "atendimento"
   );
   const [search, setSearch] = useState("");
-  const [leads, setLeads] = useState<Record<string, LeadCard[]>>(initialLeads);
+  const [leads, setLeads] = useState<Record<PipelineType, Record<string, LeadCard[]>>>(initialLeads);
   const navigate = useNavigate();
   const config = pipelineConfigs[activeType];
 
@@ -81,19 +69,23 @@ const Pipeline = () => {
     setSearchParams({ type });
   };
 
+  const currentLeads = leads[activeType];
+
   const moveLead = useCallback((sourceStage: string, destStage: string, sourceIndex: number, destIndex: number) => {
     setLeads((prev) => {
       const next = { ...prev };
-      const sourceList = [...(next[sourceStage] || [])];
-      const destList = sourceStage === destStage ? sourceList : [...(next[destStage] || [])];
+      const pipelineData = { ...next[activeType] };
+      const sourceList = [...(pipelineData[sourceStage] || [])];
+      const destList = sourceStage === destStage ? sourceList : [...(pipelineData[destStage] || [])];
       const [moved] = sourceList.splice(sourceIndex, 1);
       if (!moved) return prev;
       destList.splice(destIndex, 0, moved);
-      next[sourceStage] = sourceList;
-      if (sourceStage !== destStage) next[destStage] = destList;
+      pipelineData[sourceStage] = sourceList;
+      if (sourceStage !== destStage) pipelineData[destStage] = destList;
+      next[activeType] = pipelineData;
       return next;
     });
-  }, []);
+  }, [activeType]);
 
   const onDragEnd = useCallback((result: DropResult) => {
     const { source, destination } = result;
@@ -102,7 +94,7 @@ const Pipeline = () => {
 
     const sourceStage = source.droppableId;
     const destStage = destination.droppableId;
-    const lead = leads[sourceStage]?.[source.index];
+    const lead = currentLeads[sourceStage]?.[source.index];
     if (!lead) return;
 
     if (destStage === "Perdido" && sourceStage !== "Perdido") {
@@ -119,7 +111,7 @@ const Pipeline = () => {
 
     moveLead(sourceStage, destStage, source.index, destination.index);
     if (sourceStage !== destStage) notifyStageChange(lead.name, destStage);
-  }, [leads, moveLead]);
+  }, [currentLeads, moveLead]);
 
   const handleLostConfirm = (reason: string, notes: string) => {
     if (pendingMove) {
@@ -186,7 +178,7 @@ const Pipeline = () => {
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4" style={{ minWidth: config.stages.length * 290 }}>
             {config.stages.map((stage, i) => {
-              const cards = (activeType === "atendimento" ? leads[stage] : undefined) || [];
+              const cards = currentLeads[stage] || [];
               const filtered = cards.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
               return (
                 <motion.div key={stage} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="w-[280px] shrink-0">
@@ -216,7 +208,10 @@ const Pipeline = () => {
                                   {...dragProvided.dragHandleProps}
                                   className={cn("transition-shadow", dragSnapshot.isDragging && "shadow-lg ring-2 ring-primary/30 rounded-lg")}
                                 >
-                                  <LeadKanbanCard lead={lead} onClick={() => navigate(`/leads/${lead.id}`)} />
+                                  <LeadKanbanCard lead={lead} onClick={() => {
+                                    const basePath = activeType === "captacao" ? "/captacao" : activeType === "pos_venda" ? "/pos-venda" : "/leads";
+                                    navigate(`${basePath}/${lead.id}`);
+                                  }} />
                                 </div>
                               )}
                             </Draggable>
