@@ -112,6 +112,7 @@ const LeadDetail = () => {
           <Button size="sm" variant="outline" className="gap-1.5"><MessageCircle size={14} /> WhatsApp</Button>
           <Button size="sm" variant="outline" className="gap-1.5"><Phone size={14} /> Ligar</Button>
           <Button size="sm" variant="outline" className="gap-1.5"><CheckSquare size={14} /> Tarefa</Button>
+          <Button size="sm" variant="outline" className="gap-1.5"><MapPin size={14} /> Visita</Button>
           <Button size="sm" className="gradient-primary text-primary-foreground gap-1.5"><FileText size={14} /> Proposta</Button>
         </div>
       </div>
@@ -121,6 +122,7 @@ const LeadDetail = () => {
         <Button size="sm" variant="outline" className="gap-1 shrink-0"><MessageCircle size={14} /> WhatsApp</Button>
         <Button size="sm" variant="outline" className="gap-1 shrink-0"><Phone size={14} /> Ligar</Button>
         <Button size="sm" variant="outline" className="gap-1 shrink-0"><CheckSquare size={14} /> Tarefa</Button>
+        <Button size="sm" variant="outline" className="gap-1 shrink-0"><MapPin size={14} /> Visita</Button>
         <Button size="sm" className="gradient-primary text-primary-foreground gap-1 shrink-0"><FileText size={14} /> Proposta</Button>
       </div>
 
