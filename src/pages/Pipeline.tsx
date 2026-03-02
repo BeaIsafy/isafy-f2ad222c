@@ -109,9 +109,33 @@ const Pipeline = () => {
       return;
     }
 
+    // Auto-transition: Fechado in Atendimento → create in Pós-Venda
+    if (activeType === "atendimento" && destStage === "Fechado" && sourceStage !== "Fechado") {
+      moveLead(sourceStage, destStage, source.index, destination.index);
+      notifyStageChange(lead.name, destStage);
+      // Create entry in Pós-Venda pipeline
+      const newPosVendaLead: LeadCard = {
+        ...lead,
+        id: `pv-${lead.id}-${Date.now()}`,
+        lastInteraction: "Agora",
+        daysWithoutUpdate: 0,
+        hasPendingTask: true,
+        hasActiveProposal: false,
+      };
+      setLeads(prev => {
+        const next = { ...prev };
+        const pvData = { ...next.pos_venda };
+        pvData["Contrato Assinado"] = [...(pvData["Contrato Assinado"] || []), newPosVendaLead];
+        next.pos_venda = pvData;
+        return next;
+      });
+      notifyStageChange(lead.name, "Pós-Venda (automático)");
+      return;
+    }
+
     moveLead(sourceStage, destStage, source.index, destination.index);
     if (sourceStage !== destStage) notifyStageChange(lead.name, destStage);
-  }, [currentLeads, moveLead]);
+  }, [currentLeads, moveLead, activeType]);
 
   const handleLostConfirm = (reason: string, notes: string) => {
     if (pendingMove) {
@@ -179,7 +203,15 @@ const Pipeline = () => {
           <div className="flex gap-4" style={{ minWidth: config.stages.length * 290 }}>
             {config.stages.map((stage, i) => {
               const cards = currentLeads[stage] || [];
-              const filtered = cards.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
+              const q = search.toLowerCase();
+              const filtered = cards.filter((c) => {
+                if (c.name.toLowerCase().includes(q)) return true;
+                if (c.neighborhood.toLowerCase().includes(q)) return true;
+                if (c.purpose.toLowerCase().includes(q)) return true;
+                const priceStr = `${c.minPrice} ${c.maxPrice}`;
+                if (priceStr.includes(q)) return true;
+                return false;
+              });
               return (
                 <motion.div key={stage} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="w-[280px] shrink-0">
                   <Droppable droppableId={stage}>
