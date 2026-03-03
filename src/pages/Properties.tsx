@@ -7,7 +7,7 @@ import { mockProperties } from "@/data/propertiesMockData";
 import { PropertyCard } from "@/components/properties/PropertyCard";
 import { PropertyFilters, defaultFilters, type FilterState } from "@/components/properties/PropertyFilters";
 import { PropertyGallery } from "@/components/properties/PropertyGallery";
-import { PropertyFormModal } from "@/components/properties/PropertyFormModal";
+import { useNavigate } from "react-router-dom";
 
 const Properties = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -15,7 +15,7 @@ const Properties = () => {
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [search, setSearch] = useState("");
   const [gallery, setGallery] = useState<{ images: string[]; title: string } | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+  const navigate = useNavigate();
 
   const filtered = useMemo(() => {
     let items = mockProperties;
@@ -69,7 +69,7 @@ const Properties = () => {
           <h1 className="text-2xl font-bold text-foreground">Imóveis</h1>
           <p className="text-sm text-muted-foreground">{filtered.length} imóveis no catálogo</p>
         </div>
-        <Button className="gradient-primary text-primary-foreground shadow-primary gap-2" onClick={() => setFormOpen(true)}>
+        <Button className="gradient-primary text-primary-foreground shadow-primary gap-2" onClick={() => navigate("/properties/new")}>
           <Plus size={16} /> Novo Imóvel
         </Button>
       </div>
@@ -124,7 +124,7 @@ const Properties = () => {
                 property={p}
                 viewMode="grid"
                 onView={() => {}}
-                onEdit={() => setFormOpen(true)}
+                onEdit={() => navigate("/properties/new")}
                 onImageClick={() => setGallery({ images: p.images, title: p.title })}
                 onDuplicate={() => {}}
               />
@@ -139,7 +139,7 @@ const Properties = () => {
                 property={p}
                 viewMode="list"
                 onView={() => {}}
-                onEdit={() => setFormOpen(true)}
+                onEdit={() => navigate("/properties/new")}
                 onImageClick={() => setGallery({ images: p.images, title: p.title })}
                 onDuplicate={() => {}}
               />
@@ -151,8 +151,6 @@ const Properties = () => {
       {/* Gallery popup */}
       {gallery && <PropertyGallery open={!!gallery} onClose={() => setGallery(null)} images={gallery.images} title={gallery.title} />}
 
-      {/* Form modal */}
-      <PropertyFormModal open={formOpen} onClose={() => setFormOpen(false)} />
     </div>
   );
 };
