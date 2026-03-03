@@ -13,7 +13,7 @@ const AuthPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    navigate(isLogin ? "/dashboard" : "/onboarding");
   };
 
   return (
