@@ -51,45 +51,59 @@ export function PropertyCard({ property: p, viewMode, onView, onEdit, onImageCli
 
   if (viewMode === "list") {
     return (
-      <div className="group flex items-center gap-4 rounded-xl border border-border/50 bg-card p-3 shadow-card transition-all hover:shadow-card-hover cursor-pointer" onClick={onView}>
-        <div
-          className="h-20 w-28 shrink-0 rounded-lg bg-muted overflow-hidden relative cursor-pointer"
-          onClick={e => { e.stopPropagation(); onImageClick(); }}
-        >
-          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/30">
-            <Building2 size={28} />
-          </div>
-        </div>
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-foreground truncate">{p.title}</h3>
-            <span className="text-xs text-muted-foreground shrink-0">{p.code}</span>
-            <Badge variant="outline" className={cn("text-[10px] shrink-0", sc.className)}>{sc.label}</Badge>
-          </div>
-          <p className="flex items-center gap-1 text-xs text-muted-foreground truncate"><MapPin size={11} />{p.neighborhood}, {p.city}</p>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            {p.bedrooms > 0 && <span className="flex items-center gap-0.5"><BedDouble size={12} />{p.bedrooms}</span>}
-            {p.bathrooms > 0 && <span className="flex items-center gap-0.5"><Bath size={12} />{p.bathrooms}</span>}
-            {p.parkingSpaces > 0 && <span className="flex items-center gap-0.5"><Car size={12} />{p.parkingSpaces}</span>}
-            <span className="flex items-center gap-0.5"><Maximize size={12} />{p.totalArea}m²</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-base font-bold text-gradient">{formatCurrency(mainPrice)}{priceLabel}</p>
-            <div className="flex items-center gap-1 justify-end mt-0.5">
-              <Avatar className="h-4 w-4"><AvatarFallback className="text-[6px] font-bold bg-primary/10 text-primary">{p.brokerInitials}</AvatarFallback></Avatar>
-              <span className="text-[10px] text-muted-foreground">{p.brokerName}</span>
+      <TooltipProvider delayDuration={200}>
+        <div className="group flex items-center gap-4 rounded-xl border border-border/50 bg-card p-3 shadow-card transition-all hover:shadow-card-hover cursor-pointer" onClick={onView}>
+          <div
+            className="h-20 w-28 shrink-0 rounded-lg bg-muted overflow-hidden relative cursor-pointer"
+            onClick={e => { e.stopPropagation(); onImageClick(); }}
+          >
+            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/30">
+              <Building2 size={28} />
             </div>
           </div>
-          <ActionMenu />
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-foreground truncate">{p.title}</h3>
+              <span className="text-xs text-muted-foreground shrink-0">{p.code}</span>
+              <Badge variant="outline" className={cn("text-[10px] shrink-0", sc.className)}>{sc.label}</Badge>
+            </div>
+            <p className="flex items-center gap-1 text-xs text-muted-foreground truncate"><MapPin size={11} />{p.neighborhood}, {p.city}</p>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              {p.bedrooms > 0 && <span className="flex items-center gap-0.5"><BedDouble size={12} />{p.bedrooms}</span>}
+              {p.bathrooms > 0 && <span className="flex items-center gap-0.5"><Bath size={12} />{p.bathrooms}</span>}
+              {p.parkingSpaces > 0 && <span className="flex items-center gap-0.5"><Car size={12} />{p.parkingSpaces}</span>}
+              <span className="flex items-center gap-0.5"><Maximize size={12} />{p.totalArea}m²</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className={cn("h-full rounded-full transition-all", completionBarColor)} style={{ width: `${completion}%` }} />
+                  </div>
+                  <span className={cn("text-[11px] font-semibold tabular-nums", completionColor)}>{completion}%</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top"><p>Preenchimento do cadastro</p></TooltipContent>
+            </Tooltip>
+            <div className="text-right">
+              <p className="text-base font-bold text-gradient">{formatCurrency(mainPrice)}{priceLabel}</p>
+              <div className="flex items-center gap-1 justify-end mt-0.5">
+                <Avatar className="h-4 w-4"><AvatarFallback className="text-[6px] font-bold bg-primary/10 text-primary">{p.brokerInitials}</AvatarFallback></Avatar>
+                <span className="text-[10px] text-muted-foreground">{p.brokerName}</span>
+              </div>
+            </div>
+            <ActionMenu />
+          </div>
         </div>
-      </div>
+      </TooltipProvider>
     );
   }
 
   return (
-    <div className="group cursor-pointer rounded-xl border border-border/50 bg-card shadow-card transition-all hover:shadow-card-hover overflow-hidden" onClick={onView}>
+    <TooltipProvider delayDuration={200}>
+      <div className="group cursor-pointer rounded-xl border border-border/50 bg-card shadow-card transition-all hover:shadow-card-hover overflow-hidden" onClick={onView}>
       <div
         className="h-40 bg-muted relative overflow-hidden cursor-pointer"
         onClick={e => { e.stopPropagation(); onImageClick(); }}
