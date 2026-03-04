@@ -141,6 +141,18 @@ export function PropertyCard({ property: p, viewMode, onView, onEdit, onImageCli
             <span className="flex items-center gap-0.5"><Maximize size={13} />{p.totalArea}m²</span>
           </div>
         </div>
+        {/* Completion bar */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                <div className={cn("h-full rounded-full transition-all", completionBarColor)} style={{ width: `${completion}%` }} />
+              </div>
+              <span className={cn("text-[11px] font-semibold tabular-nums shrink-0", completionColor)}>{completion}%</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top"><p>Preenchimento do cadastro</p></TooltipContent>
+        </Tooltip>
         <div className="flex items-center justify-between border-t border-border/30 pt-2">
           <div className="flex items-center gap-1.5">
             <Avatar className="h-5 w-5"><AvatarFallback className="text-[8px] font-bold bg-primary/10 text-primary">{p.brokerInitials}</AvatarFallback></Avatar>
@@ -150,5 +162,6 @@ export function PropertyCard({ property: p, viewMode, onView, onEdit, onImageCli
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
