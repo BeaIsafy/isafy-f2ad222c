@@ -15,28 +15,28 @@ export function AppLayout() {
       {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <AppSidebar activePanel={activePanel} onPanelToggle={setActivePanel} />
-        {activePanel && (
-          <SidebarSubPanel panel={activePanel} onClose={() => setActivePanel(null)} />
-        )}
+        {activePanel &&
+        <SidebarSubPanel panel={activePanel} onClose={() => setActivePanel(null)} />
+        }
       </div>
 
       {/* Click-away for sub panel */}
-      {activePanel && (
-        <div
-          className="fixed inset-0 z-20 hidden lg:block"
-          onClick={() => setActivePanel(null)}
-        />
-      )}
+      {activePanel &&
+      <div
+        className="fixed inset-0 z-20 hidden lg:block"
+        onClick={() => setActivePanel(null)} />
+
+      }
 
       {/* Main */}
       <main className={cn("transition-all duration-300 min-h-screen", mainMargin)}>
-        <div className="p-4 md:p-6 lg:p-8 pb-20 lg:pb-8">
+        <div className="p-4 md:p-6 lg:p-8 pb-20 lg:pb-8 px-[16px] py-[16px]">
           <Outlet />
         </div>
       </main>
 
       {/* Mobile bottom bar */}
       <MobileBottomBar />
-    </div>
-  );
+    </div>);
+
 }
