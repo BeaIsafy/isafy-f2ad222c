@@ -25,6 +25,9 @@ export function PropertyCard({ property: p, viewMode, onView, onEdit, onImageCli
   const mainPrice = p.salePrice ?? p.rentPrice ?? p.seasonPrice ?? 0;
   const priceLabel = p.salePrice ? "" : p.rentPrice ? "/mês" : p.seasonPrice ? "/dia" : "";
   const sc = statusConfig[p.status];
+  const completion = getPropertyCompletion(p);
+  const completionColor = getCompletionColor(completion);
+  const completionBarColor = getCompletionBarColor(completion);
 
   const ActionMenu = () => (
     <DropdownMenu>
