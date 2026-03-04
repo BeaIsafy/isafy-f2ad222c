@@ -2,9 +2,11 @@ import { MapPin, BedDouble, Bath, Car, Maximize, MoreHorizontal, Eye, Pencil, Co
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Property } from "@/data/propertiesMockData";
 import { statusConfig, purposeLabels } from "@/data/propertiesMockData";
+import { getPropertyCompletion, getCompletionColor, getCompletionBarColor } from "@/utils/propertyCompletion";
 
 function formatCurrency(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
