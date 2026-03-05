@@ -128,7 +128,7 @@ const StepPlano = ({ selected, onSelect }: { selected: string; onSelect: (id: st
   <div className="space-y-5">
     <div>
       <h2 className="text-xl font-bold text-foreground">Escolha seu Plano</h2>
-      <p className="text-sm text-muted-foreground mt-1">Selecione o plano ideal para sua operação</p>
+      <p className="text-sm text-muted-foreground mt-1">Selecione o plano ideal para sua operação. Todos incluem 3 dias de teste grátis.</p>
     </div>
     <div className="grid gap-4 md:grid-cols-3">
       {plans.map((plan) => (
@@ -150,17 +150,21 @@ const StepPlano = ({ selected, onSelect }: { selected: string; onSelect: (id: st
             </div>
             <div>
               <p className="font-bold text-foreground">{plan.name}</p>
-              <p className="text-lg font-extrabold text-gradient">{plan.price}<span className="text-xs font-normal text-muted-foreground">{plan.period}</span></p>
+              <p className="text-lg font-extrabold text-gradient">R$ {plan.price}<span className="text-xs font-normal text-muted-foreground">{plan.period}</span></p>
             </div>
           </div>
+          <Separator className="mb-3" />
           <ul className="space-y-2">
             {plan.features.map((f) => (
-              <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 size={14} className={selected === plan.id ? "text-primary" : "text-muted-foreground/50"} />
+              <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                <Check size={14} className={`mt-0.5 shrink-0 ${selected === plan.id ? "text-primary" : "text-muted-foreground/50"}`} />
                 {f}
               </li>
             ))}
           </ul>
+          <Badge variant="outline" className="w-full justify-center py-1.5 text-xs border-border mt-4">
+            <Clock size={12} className="mr-1" /> 3 dias grátis para testar
+          </Badge>
         </Card>
       ))}
     </div>
