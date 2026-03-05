@@ -118,19 +118,6 @@ export function AppSidebar({
               </Tooltip>);
 
           })}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive">
-                <LogOut size={20} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Sair</TooltipContent>
-          </Tooltip>
-
-          {/* User avatar */}
-          <div className="mt-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-            <User size={16} className="text-primary" />
-          </div>
         </div>
       </aside>
     </TooltipProvider>);
