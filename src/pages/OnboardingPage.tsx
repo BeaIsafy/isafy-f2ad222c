@@ -10,16 +10,18 @@ import {
   ArrowRight,
   ArrowLeft,
   Upload,
-  Crown,
-  Zap,
-  Rocket,
   Plus,
   Trash2,
   Mail,
+  Check,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { plans } from "@/data/plansData";
 import logoIsafy from "@/assets/logo-isafy.png";
 
 const steps = [
@@ -28,40 +30,6 @@ const steps = [
   { id: "plano", label: "Plano", icon: CreditCard },
   { id: "equipe", label: "Equipe", icon: Users },
   { id: "concluir", label: "Concluir", icon: CheckCircle2 },
-];
-
-const plans = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "R$ 97",
-    period: "/mês",
-    icon: Zap,
-    color: "border-info/50 bg-info/5",
-    features: ["1 Corretor", "50 Imóveis", "100 Leads", "Relatórios básicos"],
-    teamEnabled: false,
-  },
-  {
-    id: "professional",
-    name: "Professional",
-    price: "R$ 197",
-    period: "/mês",
-    icon: Rocket,
-    color: "border-primary/50 bg-primary/5",
-    popular: true,
-    features: ["5 Corretores", "Imóveis ilimitados", "Leads ilimitados", "Relatórios avançados", "Publicação portais"],
-    teamEnabled: true,
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "R$ 497",
-    period: "/mês",
-    icon: Crown,
-    color: "border-accent/50 bg-accent/5",
-    features: ["Corretores ilimitados", "Tudo do Professional", "API dedicada", "Suporte prioritário", "White-label"],
-    teamEnabled: true,
-  },
 ];
 
 const StepEmpresa = ({ data, onChange }: { data: any; onChange: (d: any) => void }) => (
@@ -160,7 +128,7 @@ const StepPlano = ({ selected, onSelect }: { selected: string; onSelect: (id: st
   <div className="space-y-5">
     <div>
       <h2 className="text-xl font-bold text-foreground">Escolha seu Plano</h2>
-      <p className="text-sm text-muted-foreground mt-1">Selecione o plano ideal para sua operação</p>
+      <p className="text-sm text-muted-foreground mt-1">Selecione o plano ideal para sua operação. Todos incluem 3 dias de teste grátis.</p>
     </div>
     <div className="grid gap-4 md:grid-cols-3">
       {plans.map((plan) => (
@@ -182,17 +150,21 @@ const StepPlano = ({ selected, onSelect }: { selected: string; onSelect: (id: st
             </div>
             <div>
               <p className="font-bold text-foreground">{plan.name}</p>
-              <p className="text-lg font-extrabold text-gradient">{plan.price}<span className="text-xs font-normal text-muted-foreground">{plan.period}</span></p>
+              <p className="text-lg font-extrabold text-gradient">R$ {plan.price}<span className="text-xs font-normal text-muted-foreground">{plan.period}</span></p>
             </div>
           </div>
+          <Separator className="mb-3" />
           <ul className="space-y-2">
             {plan.features.map((f) => (
-              <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 size={14} className={selected === plan.id ? "text-primary" : "text-muted-foreground/50"} />
+              <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                <Check size={14} className={`mt-0.5 shrink-0 ${selected === plan.id ? "text-primary" : "text-muted-foreground/50"}`} />
                 {f}
               </li>
             ))}
           </ul>
+          <Badge variant="outline" className="w-full justify-center py-1.5 text-xs border-border mt-4">
+            <Clock size={12} className="mr-1" /> 3 dias grátis para testar
+          </Badge>
         </Card>
       ))}
     </div>
@@ -287,7 +259,7 @@ const StepConcluir = ({ data, plan }: { data: any; plan: string }) => {
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
-  const [selectedPlan, setSelectedPlan] = useState("professional");
+  const [selectedPlan, setSelectedPlan] = useState("performance");
   const [empresa, setEmpresa] = useState<any>({});
   const [identidade, setIdentidade] = useState<any>({});
   const [equipe, setEquipe] = useState<{ email: string; role: string }[]>([{ email: "", role: "corretor" }]);

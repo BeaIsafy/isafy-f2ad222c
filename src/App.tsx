@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import PaymentPage from "./pages/PaymentPage";
 import Dashboard from "./pages/Dashboard";
 import Pipeline from "./pages/Pipeline";
 import LeadDetail from "./pages/LeadDetail";
@@ -32,6 +33,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<AuthPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pipeline" element={<Pipeline />} />

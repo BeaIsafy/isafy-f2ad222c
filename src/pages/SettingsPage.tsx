@@ -36,17 +36,14 @@ const mockTeam = [
 ];
 
 const mockInvoices = [
-  { id: "INV-2024-012", date: "01/03/2026", amount: "R$ 297,00", status: "paid" },
-  { id: "INV-2024-011", date: "01/02/2026", amount: "R$ 297,00", status: "paid" },
-  { id: "INV-2024-010", date: "01/01/2026", amount: "R$ 297,00", status: "paid" },
-  { id: "INV-2024-009", date: "01/12/2025", amount: "R$ 297,00", status: "overdue" },
+  { id: "INV-2024-012", date: "01/03/2026", amount: "R$ 335,00", status: "paid" },
+  { id: "INV-2024-011", date: "01/02/2026", amount: "R$ 335,00", status: "paid" },
+  { id: "INV-2024-010", date: "01/01/2026", amount: "R$ 335,00", status: "paid" },
+  { id: "INV-2024-009", date: "01/12/2025", amount: "R$ 335,00", status: "overdue" },
 ];
 
-const plans = [
-  { id: "starter", name: "Starter", price: 97, members: 1, storage: "5 GB", features: ["1 usuário", "50 imóveis", "5 GB armazenamento", "Suporte por email"], teamEnabled: false },
-  { id: "professional", name: "Professional", price: 297, members: 5, storage: "50 GB", features: ["5 usuários", "Imóveis ilimitados", "50 GB armazenamento", "Integrações", "Suporte prioritário"], teamEnabled: true },
-  { id: "enterprise", name: "Enterprise", price: 597, members: 20, storage: "200 GB", features: ["20 usuários", "Imóveis ilimitados", "200 GB armazenamento", "Todas integrações", "API dedicada", "Suporte 24/7"], teamEnabled: true },
-];
+// Plans imported from shared data
+import { plans } from "@/data/plansData";
 
 const integrations = [
   { id: "wordpress", name: "WordPress", desc: "Sincronize imóveis com seu site WordPress", icon: Globe, connected: true, category: "site" },
@@ -317,7 +314,7 @@ function IntegracoesTab() {
 /* ───────── ASSINATURA TAB ───────── */
 function AssinaturaTab() {
   const [showPlans, setShowPlans] = useState(false);
-  const currentPlan = plans[1]; // Professional
+  const currentPlan = plans[1]; // Performance
   const usedMembers = 4;
   const usedStorage = 12.4;
 
