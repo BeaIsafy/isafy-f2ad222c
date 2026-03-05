@@ -30,7 +30,7 @@ export function AppLayout() {
 
       {/* Main */}
       <main className={cn("transition-all duration-300 min-h-screen", mainMargin)}>
-        <div className="p-4 md:p-6 lg:p-8 pb-20 lg:pb-8 px-[16px] py-[16px]">
+        <div className="p-4 md:p-6 lg:p-8 pb-20 lg:pb-8 px-[16px] py-[5px]">
           <GlobalHeader />
           <Outlet />
         </div>
@@ -38,6 +38,6 @@ export function AppLayout() {
 
       {/* Mobile bottom bar */}
       <MobileBottomBar />
-    </div>
-  );
+    </div>);
+
 }
