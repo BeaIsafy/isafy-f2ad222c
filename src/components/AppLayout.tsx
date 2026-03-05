@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { AppSidebar, type PanelType } from "./AppSidebar";
 import { SidebarSubPanel } from "./SidebarSubPanel";
 import { MobileBottomBar } from "./MobileBottomBar";
+import { GlobalHeader } from "./GlobalHeader";
 import { cn } from "@/lib/utils";
 
 export function AppLayout() {
@@ -25,18 +26,18 @@ export function AppLayout() {
       <div
         className="fixed inset-0 z-20 hidden lg:block"
         onClick={() => setActivePanel(null)} />
-
       }
 
       {/* Main */}
       <main className={cn("transition-all duration-300 min-h-screen", mainMargin)}>
         <div className="p-4 md:p-6 lg:p-8 pb-20 lg:pb-8 px-[16px] py-[16px]">
+          <GlobalHeader />
           <Outlet />
         </div>
       </main>
 
       {/* Mobile bottom bar */}
       <MobileBottomBar />
-    </div>);
-
+    </div>
+  );
 }
