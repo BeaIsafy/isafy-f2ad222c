@@ -30,9 +30,9 @@ const navItems = [
 
 
 const bottomItems = [
-{ label: "Suporte", icon: HelpCircle, path: "/support" },
-{ label: "Configurações", icon: Settings, path: "/settings" },
-{ label: "Perfil", icon: User, path: "/profile" }];
+  { label: "Suporte", icon: HelpCircle, path: "/support" },
+  { label: "Configurações", icon: Settings, path: "/settings" },
+];
 
 
 export type PanelType = "pipeline" | "properties" | "contacts" | null;
