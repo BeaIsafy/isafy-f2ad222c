@@ -10,16 +10,18 @@ import {
   ArrowRight,
   ArrowLeft,
   Upload,
-  Crown,
-  Zap,
-  Rocket,
   Plus,
   Trash2,
   Mail,
+  Check,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { plans } from "@/data/plansData";
 import logoIsafy from "@/assets/logo-isafy.png";
 
 const steps = [
@@ -28,40 +30,6 @@ const steps = [
   { id: "plano", label: "Plano", icon: CreditCard },
   { id: "equipe", label: "Equipe", icon: Users },
   { id: "concluir", label: "Concluir", icon: CheckCircle2 },
-];
-
-const plans = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "R$ 97",
-    period: "/mês",
-    icon: Zap,
-    color: "border-info/50 bg-info/5",
-    features: ["1 Corretor", "50 Imóveis", "100 Leads", "Relatórios básicos"],
-    teamEnabled: false,
-  },
-  {
-    id: "professional",
-    name: "Professional",
-    price: "R$ 197",
-    period: "/mês",
-    icon: Rocket,
-    color: "border-primary/50 bg-primary/5",
-    popular: true,
-    features: ["5 Corretores", "Imóveis ilimitados", "Leads ilimitados", "Relatórios avançados", "Publicação portais"],
-    teamEnabled: true,
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "R$ 497",
-    period: "/mês",
-    icon: Crown,
-    color: "border-accent/50 bg-accent/5",
-    features: ["Corretores ilimitados", "Tudo do Professional", "API dedicada", "Suporte prioritário", "White-label"],
-    teamEnabled: true,
-  },
 ];
 
 const StepEmpresa = ({ data, onChange }: { data: any; onChange: (d: any) => void }) => (
