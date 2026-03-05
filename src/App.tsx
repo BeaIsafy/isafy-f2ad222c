@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import PaymentPage from "./pages/PaymentPage";
 import Dashboard from "./pages/Dashboard";
 import Pipeline from "./pages/Pipeline";
 import LeadDetail from "./pages/LeadDetail";
