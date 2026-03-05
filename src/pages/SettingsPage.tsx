@@ -314,7 +314,7 @@ function IntegracoesTab() {
 /* ───────── ASSINATURA TAB ───────── */
 function AssinaturaTab() {
   const [showPlans, setShowPlans] = useState(false);
-  const currentPlan = plans[1]; // Professional
+  const currentPlan = plans[1]; // Performance
   const usedMembers = 4;
   const usedStorage = 12.4;
 

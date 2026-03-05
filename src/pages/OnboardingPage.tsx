@@ -259,7 +259,7 @@ const StepConcluir = ({ data, plan }: { data: any; plan: string }) => {
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
-  const [selectedPlan, setSelectedPlan] = useState("professional");
+  const [selectedPlan, setSelectedPlan] = useState("performance");
   const [empresa, setEmpresa] = useState<any>({});
   const [identidade, setIdentidade] = useState<any>({});
   const [equipe, setEquipe] = useState<{ email: string; role: string }[]>([{ email: "", role: "corretor" }]);
