@@ -39,7 +39,7 @@ export function GlobalHeader() {
   const userName = "Carlos";
 
   return (
-    <header className="flex items-center justify-between pb-4 mb-2 px-[5px] py-[3px]">
+    <header className="flex items-center justify-between pb-4 mb-2 px-[5px] py-[4px]">
       {/* Greeting — desktop only */}
       <div className="hidden lg:block">
         <h2 className="text-lg font-semibold text-foreground">
