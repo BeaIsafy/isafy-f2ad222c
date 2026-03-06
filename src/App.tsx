@@ -13,6 +13,7 @@ import LeadDetail from "./pages/LeadDetail";
 import CaptacaoDetail from "./pages/CaptacaoDetail";
 import PosVendaDetail from "./pages/PosVendaDetail";
 import Contacts from "./pages/Contacts";
+import ContactDetail from "./pages/ContactDetail";
 import Properties from "./pages/Properties";
 import PropertyNew from "./pages/PropertyNew";
 import CalendarPage from "./pages/CalendarPage";
