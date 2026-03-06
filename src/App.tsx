@@ -13,6 +13,7 @@ import LeadDetail from "./pages/LeadDetail";
 import CaptacaoDetail from "./pages/CaptacaoDetail";
 import PosVendaDetail from "./pages/PosVendaDetail";
 import Contacts from "./pages/Contacts";
+import ContactDetail from "./pages/ContactDetail";
 import Properties from "./pages/Properties";
 import PropertyNew from "./pages/PropertyNew";
 import CalendarPage from "./pages/CalendarPage";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/captacao/:id" element={<CaptacaoDetail />} />
             <Route path="/pos-venda/:id" element={<PosVendaDetail />} />
             <Route path="/contacts" element={<Contacts />} />
+            <Route path="/contacts/:id" element={<ContactDetail />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/properties/new" element={<PropertyNew />} />
             <Route path="/calendar" element={<CalendarPage />} />
