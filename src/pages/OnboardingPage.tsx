@@ -424,7 +424,7 @@ const OnboardingPage = () => {
             disabled={!canNext()}
             className="gap-2 gradient-primary text-primary-foreground shadow-primary"
           >
-            {currentStep.id === "concluir" ? "Acessar Dashboard" : "Próximo"}
+            {saving ? "Salvando..." : currentStep.id === "concluir" ? "Acessar Dashboard" : "Próximo"}
             <ArrowRight size={16} />
           </Button>
         </div>
