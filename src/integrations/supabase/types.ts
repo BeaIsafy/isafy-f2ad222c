@@ -1305,6 +1305,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      promote_to_owner: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "superadmin" | "owner" | "broker"
