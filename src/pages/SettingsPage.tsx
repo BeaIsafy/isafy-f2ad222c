@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Building2, Palette, Users, Plug, CreditCard, Search, Plus, Upload,
   Globe, Facebook, Chrome, ShoppingBag, ExternalLink, Check, Crown,
@@ -17,6 +17,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useBrokers } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
+import { plans } from "@/data/plansData";
 
 /* ───────── TABS ───────── */
 const tabs = [
@@ -26,24 +30,6 @@ const tabs = [
   { id: "integracoes", label: "Integrações", icon: Plug },
   { id: "assinatura", label: "Assinatura", icon: CreditCard },
 ];
-
-/* ───────── MOCK DATA ───────── */
-const mockTeam = [
-  { id: "1", name: "Carlos Silva", email: "carlos@imob.com", role: "admin", status: "active", avatar: "CS" },
-  { id: "2", name: "Ana Oliveira", email: "ana@imob.com", role: "corretor", status: "active", avatar: "AO" },
-  { id: "3", name: "Pedro Santos", email: "pedro@imob.com", role: "corretor", status: "active", avatar: "PS" },
-  { id: "4", name: "Maria Costa", email: "maria@imob.com", role: "corretor", status: "pending", avatar: "MC" },
-];
-
-const mockInvoices = [
-  { id: "INV-2024-012", date: "01/03/2026", amount: "R$ 335,00", status: "paid" },
-  { id: "INV-2024-011", date: "01/02/2026", amount: "R$ 335,00", status: "paid" },
-  { id: "INV-2024-010", date: "01/01/2026", amount: "R$ 335,00", status: "paid" },
-  { id: "INV-2024-009", date: "01/12/2025", amount: "R$ 335,00", status: "overdue" },
-];
-
-// Plans imported from shared data
-import { plans } from "@/data/plansData";
 
 const integrations = [
   { id: "wordpress", name: "WordPress", desc: "Sincronize imóveis com seu site WordPress", icon: Globe, connected: true, category: "site" },
@@ -55,8 +41,47 @@ const integrations = [
   { id: "imovelweb", name: "Imóvel Web", desc: "Publique no portal Imóvel Web", icon: ShoppingBag, connected: false, category: "portal" },
 ];
 
+const mockInvoices = [
+  { id: "INV-2024-012", date: "01/03/2026", amount: "R$ 335,00", status: "paid" },
+  { id: "INV-2024-011", date: "01/02/2026", amount: "R$ 335,00", status: "paid" },
+  { id: "INV-2024-010", date: "01/01/2026", amount: "R$ 335,00", status: "paid" },
+  { id: "INV-2024-009", date: "01/12/2025", amount: "R$ 335,00", status: "overdue" },
+];
+
 /* ───────── EMPRESA TAB ───────── */
 function EmpresaTab() {
+  const { company } = useAuth();
+  const [name, setName] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [creci, setCreci] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (company) {
+      setName(company.name || "");
+      setCnpj(company.cnpj || "");
+      setCreci(company.creci || "");
+      setPhone(company.phone || "");
+      setEmail(company.email || "");
+    }
+  }, [company]);
+
+  const handleSave = async () => {
+    if (!company?.id) return;
+    setSaving(true);
+    const { error } = await supabase.from("companies").update({
+      name, cnpj, creci, phone, email,
+    }).eq("id", company.id);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Dados salvos com sucesso" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="shadow-card border-border/50">
@@ -64,17 +89,17 @@ function EmpresaTab() {
           <CardTitle className="flex items-center gap-2 text-base"><Building2 size={18} className="text-primary" /> Dados da Empresa</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div><label className="text-sm font-medium text-foreground">Nome Fantasia</label><Input placeholder="Sua Imobiliária" className="mt-1" /></div>
-          <div><label className="text-sm font-medium text-foreground">Razão Social</label><Input placeholder="Imobiliária Ltda." className="mt-1" /></div>
-          <div><label className="text-sm font-medium text-foreground">CNPJ</label><Input placeholder="00.000.000/0001-00" className="mt-1" /></div>
-          <div><label className="text-sm font-medium text-foreground">CRECI</label><Input placeholder="000000-J" className="mt-1" /></div>
-          <div><label className="text-sm font-medium text-foreground">Telefone</label><Input placeholder="(11) 99999-9999" className="mt-1" /></div>
-          <div><label className="text-sm font-medium text-foreground">E-mail Principal</label><Input placeholder="contato@imob.com" className="mt-1" /></div>
-          <div className="sm:col-span-2"><label className="text-sm font-medium text-foreground">Endereço Completo</label><Input placeholder="Rua, número, complemento, bairro, cidade - UF" className="mt-1" /></div>
+          <div><label className="text-sm font-medium text-foreground">Nome Fantasia</label><Input value={name} onChange={e => setName(e.target.value)} placeholder="Sua Imobiliária" className="mt-1" /></div>
+          <div><label className="text-sm font-medium text-foreground">CNPJ</label><Input value={cnpj} onChange={e => setCnpj(e.target.value)} placeholder="00.000.000/0001-00" className="mt-1" /></div>
+          <div><label className="text-sm font-medium text-foreground">CRECI</label><Input value={creci} onChange={e => setCreci(e.target.value)} placeholder="000000-J" className="mt-1" /></div>
+          <div><label className="text-sm font-medium text-foreground">Telefone</label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(11) 99999-9999" className="mt-1" /></div>
+          <div><label className="text-sm font-medium text-foreground">E-mail Principal</label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder="contato@imob.com" className="mt-1" /></div>
         </CardContent>
       </Card>
       <div className="flex justify-end">
-        <Button className="gradient-primary text-primary-foreground shadow-primary" onClick={() => toast({ title: "Dados salvos com sucesso" })}>Salvar Alterações</Button>
+        <Button className="gradient-primary text-primary-foreground shadow-primary" onClick={handleSave} disabled={saving}>
+          {saving ? "Salvando..." : "Salvar Alterações"}
+        </Button>
       </div>
     </div>
   );
@@ -82,9 +107,35 @@ function EmpresaTab() {
 
 /* ───────── BRANDING TAB ───────── */
 function BrandingTab() {
+  const { company } = useAuth();
+  const [primaryColor, setPrimaryColor] = useState("");
+  const [secondaryColor, setSecondaryColor] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (company) {
+      setPrimaryColor(company.primary_color || "#2563eb");
+      setSecondaryColor(company.secondary_color || "#1e40af");
+    }
+  }, [company]);
+
+  const handleSave = async () => {
+    if (!company?.id) return;
+    setSaving(true);
+    const { error } = await supabase.from("companies").update({
+      primary_color: primaryColor,
+      secondary_color: secondaryColor,
+    }).eq("id", company.id);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Branding salvo com sucesso" });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Logos */}
       <Card className="shadow-card border-border/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base"><Palette size={18} className="text-primary" /> Identidade Visual</CardTitle>
@@ -94,11 +145,15 @@ function BrandingTab() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Logo Principal</label>
             <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 transition-colors hover:border-primary/40 hover:bg-muted/50 cursor-pointer">
-              <div className="text-center">
-                <Upload size={24} className="mx-auto text-muted-foreground" />
-                <p className="mt-1 text-xs text-muted-foreground">Clique para enviar</p>
-                <p className="text-[10px] text-muted-foreground">PNG, SVG — até 2 MB</p>
-              </div>
+              {company?.logo_url ? (
+                <img src={company.logo_url} alt="Logo" className="max-h-28 object-contain" />
+              ) : (
+                <div className="text-center">
+                  <Upload size={24} className="mx-auto text-muted-foreground" />
+                  <p className="mt-1 text-xs text-muted-foreground">Clique para enviar</p>
+                  <p className="text-[10px] text-muted-foreground">PNG, SVG — até 2 MB</p>
+                </div>
+              )}
             </div>
           </div>
           <div className="space-y-2">
@@ -114,19 +169,32 @@ function BrandingTab() {
         </CardContent>
       </Card>
 
-      {/* Site */}
       <Card className="shadow-card border-border/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Globe size={18} className="text-primary" /> Informações do Site</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Palette size={18} className="text-primary" /> Cores</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div><label className="text-sm font-medium text-foreground">URL do Site</label><Input placeholder="https://www.suaimobiliaria.com.br" className="mt-1" /></div>
-          <div className="sm:col-span-2"><label className="text-sm font-medium text-foreground">Descrição do Site (SEO)</label><Textarea placeholder="Uma breve descrição da sua imobiliária para buscadores..." className="mt-1" rows={3} /></div>
+          <div>
+            <label className="text-sm font-medium text-foreground">Cor Primária</label>
+            <div className="flex items-center gap-2 mt-1">
+              <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="h-10 w-10 rounded border-0 cursor-pointer" />
+              <Input value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="flex-1" />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground">Cor Secundária</label>
+            <div className="flex items-center gap-2 mt-1">
+              <input type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="h-10 w-10 rounded border-0 cursor-pointer" />
+              <Input value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="flex-1" />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
       <div className="flex justify-end">
-        <Button className="gradient-primary text-primary-foreground shadow-primary" onClick={() => toast({ title: "Branding salvo com sucesso" })}>Salvar Alterações</Button>
+        <Button className="gradient-primary text-primary-foreground shadow-primary" onClick={handleSave} disabled={saving}>
+          {saving ? "Salvando..." : "Salvar Alterações"}
+        </Button>
       </div>
     </div>
   );
@@ -134,15 +202,59 @@ function BrandingTab() {
 
 /* ───────── EQUIPE TAB ───────── */
 function EquipeTab() {
+  const { company } = useAuth();
+  const { data: brokers = [], isLoading, refetch } = useBrokers();
   const [search, setSearch] = useState("");
   const [showInvite, setShowInvite] = useState(false);
-  const maxMembers = 5;
-  const usedMembers = mockTeam.length;
-  const filtered = mockTeam.filter(m => m.name.toLowerCase().includes(search.toLowerCase()) || m.email.toLowerCase().includes(search.toLowerCase()));
+  const [inviteName, setInviteName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
+  const [inviteRole, setInviteRole] = useState("corretor");
+  const [saving, setSaving] = useState(false);
+
+  const planId = company?.plan_id || "start";
+  const currentPlan = plans.find(p => p.id === planId) || plans[0];
+  const maxMembers = currentPlan.members;
+  const usedMembers = brokers.length;
+  const filtered = brokers.filter((m: any) =>
+    m.name.toLowerCase().includes(search.toLowerCase()) ||
+    (m.email || "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleInvite = async () => {
+    if (!company?.id || !inviteName.trim()) return;
+    setSaving(true);
+    const initials = inviteName.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase();
+    const { error } = await supabase.from("brokers").insert({
+      company_id: company.id,
+      name: inviteName,
+      email: inviteEmail || null,
+      phone: invitePhone || null,
+      initials,
+    });
+    setSaving(false);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Membro adicionado!" });
+      setShowInvite(false);
+      setInviteName(""); setInviteEmail(""); setInvitePhone("");
+      refetch();
+    }
+  };
+
+  const handleDeactivate = async (id: string) => {
+    const { error } = await supabase.from("brokers").update({ is_active: false }).eq("id", id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Membro desativado" });
+      refetch();
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header info */}
       <Card className="shadow-card border-border/50">
         <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
           <div className="flex items-center gap-3">
@@ -163,13 +275,12 @@ function EquipeTab() {
               <Crown size={14} className="mr-1" /> Comprar cadeiras
             </Button>
             <Button size="sm" className="gradient-primary text-primary-foreground shadow-primary" onClick={() => setShowInvite(true)}>
-              <UserPlus size={14} className="mr-1" /> Convidar membro
+              <UserPlus size={14} className="mr-1" /> Adicionar membro
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Search + Table */}
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Buscar por nome ou e-mail..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
@@ -180,35 +291,44 @@ function EquipeTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Membro</TableHead>
-              <TableHead>Função</TableHead>
+              <TableHead>Contato</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map(m => (
+            {isLoading ? (
+              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhum membro encontrado</TableCell></TableRow>
+            ) : filtered.map((m: any) => (
               <TableRow key={m.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{m.avatar}</div>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {m.initials || m.name.slice(0, 2).toUpperCase()}
+                    </div>
                     <div>
                       <p className="text-sm font-medium text-foreground">{m.name}</p>
-                      <p className="text-xs text-muted-foreground">{m.email}</p>
+                      {m.creci && <p className="text-xs text-muted-foreground">CRECI: {m.creci}</p>}
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={m.role === "admin" ? "default" : "secondary"} className={m.role === "admin" ? "gradient-primary text-primary-foreground" : ""}>
-                    {m.role === "admin" ? "Administrador" : "Corretor"}
-                  </Badge>
+                  <div className="space-y-0.5">
+                    {m.email && <p className="text-xs text-muted-foreground">{m.email}</p>}
+                    {m.phone && <p className="text-xs text-muted-foreground">{m.phone}</p>}
+                  </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={m.status === "active" ? "border-[hsl(var(--success))] text-[hsl(var(--success))]" : "border-[hsl(var(--warning))] text-[hsl(var(--warning))]"}>
-                    {m.status === "active" ? "Ativo" : "Pendente"}
+                  <Badge variant="outline" className={m.is_active !== false ? "border-[hsl(var(--success))] text-[hsl(var(--success))]" : "border-destructive text-destructive"}>
+                    {m.is_active !== false ? "Ativo" : "Inativo"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon"><MoreHorizontal size={16} /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDeactivate(m.id)}>
+                    <Trash2 size={16} className="text-muted-foreground" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -216,27 +336,19 @@ function EquipeTab() {
         </Table>
       </Card>
 
-      {/* Invite Modal */}
       <Dialog open={showInvite} onOpenChange={setShowInvite}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Convidar novo membro</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Adicionar novo membro</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><label className="text-sm font-medium text-foreground">Nome</label><Input placeholder="Nome completo" className="mt-1" /></div>
-            <div><label className="text-sm font-medium text-foreground">E-mail</label><Input placeholder="email@exemplo.com" className="mt-1" /></div>
-            <div>
-              <label className="text-sm font-medium text-foreground">Função</label>
-              <Select defaultValue="corretor">
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="corretor">Corretor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <div><label className="text-sm font-medium text-foreground">Nome</label><Input value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Nome completo" className="mt-1" /></div>
+            <div><label className="text-sm font-medium text-foreground">E-mail</label><Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@exemplo.com" className="mt-1" /></div>
+            <div><label className="text-sm font-medium text-foreground">Telefone</label><Input value={invitePhone} onChange={e => setInvitePhone(e.target.value)} placeholder="(11) 99999-9999" className="mt-1" /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInvite(false)}>Cancelar</Button>
-            <Button className="gradient-primary text-primary-foreground shadow-primary" onClick={() => { setShowInvite(false); toast({ title: "Convite enviado!" }); }}>Enviar Convite</Button>
+            <Button className="gradient-primary text-primary-foreground shadow-primary" onClick={handleInvite} disabled={saving}>
+              {saving ? "Salvando..." : "Adicionar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -291,7 +403,6 @@ function IntegracoesTab() {
         </div>
       ))}
 
-      {/* WordPress Config Modal */}
       <Dialog open={wpModal} onOpenChange={setWpModal}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Globe size={18} className="text-primary" /> Configurar WordPress</DialogTitle></DialogHeader>
@@ -299,7 +410,7 @@ function IntegracoesTab() {
             <div><label className="text-sm font-medium text-foreground">URL do WordPress</label><Input placeholder="https://www.seusite.com.br" className="mt-1" /></div>
             <div><label className="text-sm font-medium text-foreground">Usuário (Application Password)</label><Input placeholder="admin" className="mt-1" /></div>
             <div><label className="text-sm font-medium text-foreground">Senha (Application Password)</label><Input type="password" placeholder="xxxx xxxx xxxx xxxx" className="mt-1" /></div>
-            <p className="text-xs text-muted-foreground">Utilize senhas de aplicação do WordPress para autenticação Basic Auth. Gere em Usuários → Perfil → Senhas de Aplicação.</p>
+            <p className="text-xs text-muted-foreground">Utilize senhas de aplicação do WordPress para autenticação Basic Auth.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWpModal(false)}>Cancelar</Button>
@@ -313,14 +424,17 @@ function IntegracoesTab() {
 
 /* ───────── ASSINATURA TAB ───────── */
 function AssinaturaTab() {
+  const { company } = useAuth();
+  const { data: brokers = [] } = useBrokers();
   const [showPlans, setShowPlans] = useState(false);
-  const currentPlan = plans[1]; // Performance
-  const usedMembers = 4;
-  const usedStorage = 12.4;
+
+  const planId = company?.plan_id || "start";
+  const currentPlan = plans.find(p => p.id === planId) || plans[0];
+  const usedMembers = brokers.length;
+  const usedStorage = 0;
 
   return (
     <div className="space-y-6">
-      {/* Current Plan */}
       <Card className="shadow-card border-border/50 overflow-hidden">
         <div className="gradient-primary p-4">
           <div className="flex items-center justify-between">
@@ -339,7 +453,7 @@ function AssinaturaTab() {
         <CardContent className="grid gap-4 pt-6 sm:grid-cols-3">
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">Próxima cobrança</p>
-            <p className="text-sm font-semibold text-foreground">01/04/2026</p>
+            <p className="text-sm font-semibold text-foreground">—</p>
           </div>
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">Membros</p>
@@ -351,8 +465,8 @@ function AssinaturaTab() {
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">Armazenamento</p>
             <div className="flex items-center gap-2">
-              <Progress value={(usedStorage / 50) * 100} className="h-2 flex-1" />
-              <span className="text-xs font-medium text-foreground">{usedStorage} GB / {currentPlan.storage}</span>
+              <Progress value={0} className="h-2 flex-1" />
+              <span className="text-xs font-medium text-foreground">0 GB / {currentPlan.storage}</span>
             </div>
           </div>
         </CardContent>
@@ -363,7 +477,6 @@ function AssinaturaTab() {
         </div>
       </Card>
 
-      {/* Invoices */}
       <Card className="shadow-card border-border/50 overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base"><FileText size={18} className="text-primary" /> Faturas</CardTitle>
@@ -398,7 +511,6 @@ function AssinaturaTab() {
         </Table>
       </Card>
 
-      {/* Plans Modal */}
       <Dialog open={showPlans} onOpenChange={setShowPlans}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader><DialogTitle>Escolha seu plano</DialogTitle></DialogHeader>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User, Camera, Save, Target, Trash2, Lock, Eye, EyeOff,
@@ -20,23 +20,8 @@ import {
 import { useTheme } from "@/hooks/useTheme";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-
-/* ── Mock data ── */
-const mockGoalsHistory = [
-  { month: "Fev 2025", target: 3000000, achieved: 2700000, pct: 90, sales: 5, leads: 42, conversions: 12 },
-  { month: "Jan 2025", target: 2500000, achieved: 1875000, pct: 75, sales: 4, leads: 38, conversions: 10 },
-  { month: "Dez 2024", target: 3000000, achieved: 3300000, pct: 110, sales: 7, leads: 55, conversions: 15 },
-  { month: "Nov 2024", target: 2800000, achieved: 2240000, pct: 80, sales: 3, leads: 30, conversions: 8 },
-  { month: "Out 2024", target: 2500000, achieved: 2000000, pct: 80, sales: 4, leads: 35, conversions: 9 },
-  { month: "Set 2024", target: 2000000, achieved: 1800000, pct: 90, sales: 3, leads: 28, conversions: 7 },
-];
-
-const mockDevices = [
-  { id: "1", name: "Chrome — Windows 11", type: "desktop", ip: "189.45.xxx.xx", lastActive: "Agora (sessão atual)", current: true, location: "São Paulo, SP" },
-  { id: "2", name: "Safari — iPhone 15 Pro", type: "mobile", ip: "189.45.xxx.xx", lastActive: "Há 2 horas", current: false, location: "São Paulo, SP" },
-  { id: "3", name: "Chrome — MacBook Pro", type: "desktop", ip: "201.12.xxx.xx", lastActive: "Há 3 dias", current: false, location: "Campinas, SP" },
-  { id: "4", name: "App iOS — iPad Air", type: "tablet", ip: "189.45.xxx.xx", lastActive: "Há 1 semana", current: false, location: "São Paulo, SP" },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const fmt = (v: number) => `R$ ${(v / 1_000_000).toFixed(1)}M`;
 
@@ -51,6 +36,21 @@ const TrendIcon = ({ pct }: { pct: number }) => {
   if (pct >= 80) return <Minus size={14} className="text-amber-500" />;
   return <TrendingDown size={14} className="text-destructive" />;
 };
+
+/* ── Mock data (goals/devices - will be real later) ── */
+const mockGoalsHistory = [
+  { month: "Fev 2025", target: 3000000, achieved: 2700000, pct: 90, sales: 5, leads: 42, conversions: 12 },
+  { month: "Jan 2025", target: 2500000, achieved: 1875000, pct: 75, sales: 4, leads: 38, conversions: 10 },
+  { month: "Dez 2024", target: 3000000, achieved: 3300000, pct: 110, sales: 7, leads: 55, conversions: 15 },
+  { month: "Nov 2024", target: 2800000, achieved: 2240000, pct: 80, sales: 3, leads: 30, conversions: 8 },
+  { month: "Out 2024", target: 2500000, achieved: 2000000, pct: 80, sales: 4, leads: 35, conversions: 9 },
+  { month: "Set 2024", target: 2000000, achieved: 1800000, pct: 90, sales: 3, leads: 28, conversions: 7 },
+];
+
+const mockDevices = [
+  { id: "1", name: "Chrome — Windows 11", type: "desktop", ip: "189.45.xxx.xx", lastActive: "Agora (sessão atual)", current: true, location: "São Paulo, SP" },
+  { id: "2", name: "Safari — iPhone 15 Pro", type: "mobile", ip: "189.45.xxx.xx", lastActive: "Há 2 horas", current: false, location: "São Paulo, SP" },
+];
 
 /* ── Sub-page: Goals History ── */
 function GoalsHistoryView({ onBack }: { onBack: () => void }) {
@@ -108,21 +108,30 @@ const ProfilePage = () => {
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
 
   const [showGoalsHistory, setShowGoalsHistory] = useState(false);
 
-  // Profile form
-  const [name, setName] = useState("João da Silva");
-  const [email, setEmail] = useState("joao@imobiliaria.com");
-  const [phone, setPhone] = useState("(11) 99123-4567");
-  const [creci, setCreci] = useState("123456-F");
+  // Profile form - populated from Supabase
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [creci, setCreci] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setName(profile.full_name || "");
+      setEmail(profile.email || user?.email || "");
+      setPhone(profile.phone || "");
+      setCreci(profile.creci || "");
+    }
+  }, [profile, user]);
 
   // Password
   const [showPwDialog, setShowPwDialog] = useState(false);
-  const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
-  const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
 
   // Goal
@@ -132,11 +141,23 @@ const ProfilePage = () => {
   const achieved = 1800000;
   const goalPct = Math.round((achieved / currentGoal) * 100);
 
-  const handleSaveProfile = () => {
-    toast({ title: "Perfil atualizado", description: "Suas informações foram salvas com sucesso." });
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+    setSaving(true);
+    const { error } = await supabase.from("profiles").update({
+      full_name: name,
+      phone,
+      creci,
+    }).eq("id", user.id);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Perfil atualizado", description: "Suas informações foram salvas com sucesso." });
+    }
   };
 
-  const handleSavePassword = () => {
+  const handleSavePassword = async () => {
     if (newPw !== confirmPw) {
       toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
       return;
@@ -145,9 +166,14 @@ const ProfilePage = () => {
       toast({ title: "Erro", description: "A senha deve ter no mínimo 6 caracteres.", variant: "destructive" });
       return;
     }
-    setShowPwDialog(false);
-    setCurrentPw(""); setNewPw(""); setConfirmPw("");
-    toast({ title: "Senha alterada", description: "Sua senha foi atualizada com sucesso." });
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      setShowPwDialog(false);
+      setNewPw(""); setConfirmPw("");
+      toast({ title: "Senha alterada", description: "Sua senha foi atualizada com sucesso." });
+    }
   };
 
   const handleSaveGoal = () => {
@@ -158,6 +184,8 @@ const ProfilePage = () => {
   const handleLogoutDevice = (id: string) => {
     toast({ title: "Dispositivo desconectado", description: "A sessão foi encerrada." });
   };
+
+  const initials = name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
 
   if (showGoalsHistory) {
     return (
@@ -194,16 +222,20 @@ const ProfilePage = () => {
                   {/* Avatar */}
                   <div className="flex items-center gap-4">
                     <div className="relative group">
-                      <div className="flex h-20 w-20 items-center justify-center rounded-full gradient-primary text-2xl font-bold text-primary-foreground">
-                        {name.split(" ").map(w => w[0]).slice(0, 2).join("")}
-                      </div>
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="Avatar" className="h-20 w-20 rounded-full object-cover" />
+                      ) : (
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full gradient-primary text-2xl font-bold text-primary-foreground">
+                          {initials || "?"}
+                        </div>
+                      )}
                       <button className="absolute inset-0 flex items-center justify-center rounded-full bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Camera size={20} className="text-primary-foreground" />
                       </button>
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground">{name}</p>
-                      <p className="text-sm text-muted-foreground">Corretor</p>
+                      <p className="font-semibold text-foreground">{name || "Sem nome"}</p>
+                      <p className="text-sm text-muted-foreground">{email}</p>
                       <Button variant="ghost" size="sm" className="text-xs text-primary mt-1 h-7 px-2 gap-1">
                         <Camera size={12} /> Alterar foto
                       </Button>
@@ -218,7 +250,7 @@ const ProfilePage = () => {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">E-mail</label>
-                      <Input value={email} onChange={e => setEmail(e.target.value)} className="mt-1" />
+                      <Input value={email} disabled className="mt-1 opacity-60" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">Telefone</label>
@@ -231,8 +263,8 @@ const ProfilePage = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button className="gradient-primary text-primary-foreground shadow-primary gap-2" onClick={handleSaveProfile}>
-                      <Save size={16} /> Salvar
+                    <Button className="gradient-primary text-primary-foreground shadow-primary gap-2" onClick={handleSaveProfile} disabled={saving}>
+                      <Save size={16} /> {saving ? "Salvando..." : "Salvar"}
                     </Button>
                     <Dialog open={showPwDialog} onOpenChange={setShowPwDialog}>
                       <DialogTrigger asChild>
@@ -243,15 +275,6 @@ const ProfilePage = () => {
                           <DialogTitle>Alterar Senha</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 py-2">
-                          <div>
-                            <label className="text-sm font-medium text-foreground">Senha Atual</label>
-                            <div className="relative mt-1">
-                              <Input type={showCurrentPw ? "text" : "password"} value={currentPw} onChange={e => setCurrentPw(e.target.value)} />
-                              <button className="absolute right-2 top-2.5 text-muted-foreground" onClick={() => setShowCurrentPw(!showCurrentPw)}>
-                                {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                              </button>
-                            </div>
-                          </div>
                           <div>
                             <label className="text-sm font-medium text-foreground">Nova Senha</label>
                             <div className="relative mt-1">
@@ -423,8 +446,8 @@ const ProfilePage = () => {
                 <h3 className="font-semibold text-foreground">Dispositivos Conectados</h3>
                 <p className="text-sm text-muted-foreground">{mockDevices.length} sessões ativas</p>
               </div>
-              <Button variant="outline" size="sm" className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/5">
-                <LogOut size={14} /> Encerrar todas
+              <Button variant="outline" size="sm" className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => { signOut(); navigate("/auth"); }}>
+                <LogOut size={14} /> Sair de todas
               </Button>
             </div>
 
