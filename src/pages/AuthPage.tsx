@@ -182,6 +182,7 @@ const AuthPage = () => {
             </Button>
           </form>
 
+          {/* Google login - desativado até configurar OAuth no Supabase
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
             <span className="text-xs text-muted-foreground">ou continue com</span>
@@ -197,6 +198,7 @@ const AuthPage = () => {
             </svg>
             Login com Google
           </Button>
+          */}
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
             {isLogin ? "Não tem uma conta?" : "Já tem uma conta?"}{" "}
