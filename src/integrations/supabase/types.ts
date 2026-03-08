@@ -732,6 +732,7 @@ export type Database = {
           owner_id: string | null
           parking_spaces: number | null
           price_per_m2: number | null
+          publish_website: boolean | null
           purpose: Database["public"]["Enums"]["property_purpose"][] | null
           rent_price: number | null
           sale_price: number | null
@@ -746,6 +747,7 @@ export type Database = {
           updated_at: string | null
           useful_area: number | null
           video_url: string | null
+          wp_post_id: number | null
           zip_code: string | null
         }
         Insert: {
@@ -778,6 +780,7 @@ export type Database = {
           owner_id?: string | null
           parking_spaces?: number | null
           price_per_m2?: number | null
+          publish_website?: boolean | null
           purpose?: Database["public"]["Enums"]["property_purpose"][] | null
           rent_price?: number | null
           sale_price?: number | null
@@ -792,6 +795,7 @@ export type Database = {
           updated_at?: string | null
           useful_area?: number | null
           video_url?: string | null
+          wp_post_id?: number | null
           zip_code?: string | null
         }
         Update: {
@@ -824,6 +828,7 @@ export type Database = {
           owner_id?: string | null
           parking_spaces?: number | null
           price_per_m2?: number | null
+          publish_website?: boolean | null
           purpose?: Database["public"]["Enums"]["property_purpose"][] | null
           rent_price?: number | null
           sale_price?: number | null
@@ -838,6 +843,7 @@ export type Database = {
           updated_at?: string | null
           useful_area?: number | null
           video_url?: string | null
+          wp_post_id?: number | null
           zip_code?: string | null
         }
         Relationships: [
@@ -1396,6 +1402,47 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wordpress_configs: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+          wp_app_password: string
+          wp_url: string
+          wp_user: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          wp_app_password: string
+          wp_url: string
+          wp_user: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          wp_app_password?: string
+          wp_url?: string
+          wp_user?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wordpress_configs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
