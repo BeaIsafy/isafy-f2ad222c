@@ -36,7 +36,16 @@ function getSLAClass(days: number) {
   return "border-l-transparent";
 }
 
-export function LeadKanbanCard({ lead, onClick }: { lead: LeadCard; onClick: () => void }) {
+interface LeadKanbanCardProps {
+  lead: LeadCard;
+  onClick: () => void;
+  onWhatsApp?: () => void;
+  onCreateTask?: () => void;
+  onCreateProposal?: () => void;
+  onScheduleVisit?: () => void;
+}
+
+export function LeadKanbanCard({ lead, onClick, onWhatsApp, onCreateTask, onCreateProposal, onScheduleVisit }: LeadKanbanCardProps) {
   const TempIcon = tempConfig[lead.temp].icon;
   const slaClass = getSLAClass(lead.daysWithoutUpdate);
 
@@ -65,7 +74,7 @@ export function LeadKanbanCard({ lead, onClick }: { lead: LeadCard; onClick: () 
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <button onClick={(e) => { e.stopPropagation(); }} className="rounded p-1 text-muted-foreground hover:bg-success/10 hover:text-success transition-colors" title="WhatsApp">
+          <button onClick={(e) => { e.stopPropagation(); onWhatsApp?.(); }} className="rounded p-1 text-muted-foreground hover:bg-success/10 hover:text-success transition-colors" title="WhatsApp">
             <MessageCircle size={14} />
           </button>
           {lead.hasPendingTask && (
@@ -92,11 +101,10 @@ export function LeadKanbanCard({ lead, onClick }: { lead: LeadCard; onClick: () 
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem><MessageCircle size={14} className="mr-2" /> Abrir WhatsApp</DropdownMenuItem>
-            <DropdownMenuItem><CheckSquare size={14} className="mr-2" /> Criar Tarefa</DropdownMenuItem>
-            <DropdownMenuItem><FileText size={14} className="mr-2" /> Criar Proposta</DropdownMenuItem>
-            <DropdownMenuItem><CalendarPlus size={14} className="mr-2" /> Agendar Visita</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive"><XCircle size={14} className="mr-2" /> Marcar Perdido</DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onWhatsApp?.(); }}><MessageCircle size={14} className="mr-2" /> Abrir WhatsApp</DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCreateTask?.(); }}><CheckSquare size={14} className="mr-2" /> Criar Tarefa</DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCreateProposal?.(); }}><FileText size={14} className="mr-2" /> Criar Proposta</DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onScheduleVisit?.(); }}><CalendarPlus size={14} className="mr-2" /> Agendar Visita</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
