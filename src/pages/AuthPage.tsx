@@ -35,9 +35,9 @@ const AuthPage = () => {
             Tudo que você precisa.
 Nada que te atrapalha.
           </h1>
-          <p className="text-lg text-primary-foreground/80">
-            Centralize operações, automatize processos e feche mais negócios.
-          </p>
+          
+
+          
         </motion.div>
       </div>
 
