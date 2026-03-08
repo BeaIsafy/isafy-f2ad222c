@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      brokers: {
+        Row: {
+          avatar_url: string | null
+          company_id: string
+          created_at: string | null
+          creci: string | null
+          email: string | null
+          id: string
+          initials: string | null
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          profile_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          company_id: string
+          created_at?: string | null
+          creci?: string | null
+          email?: string | null
+          id?: string
+          initials?: string | null
+          is_active?: boolean | null
+          name: string
+          phone?: string | null
+          profile_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          company_id?: string
+          created_at?: string | null
+          creci?: string | null
+          email?: string | null
+          id?: string
+          initials?: string | null
+          is_active?: boolean | null
+          name?: string
+          phone?: string | null
+          profile_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brokers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brokers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
           address: string | null
@@ -218,9 +278,11 @@ export type Database = {
       contacts: {
         Row: {
           address: string | null
+          broker_id: string | null
           company_id: string
           cpf: string | null
           created_at: string | null
+          created_by: string | null
           email: string | null
           id: string
           name: string
@@ -233,9 +295,11 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          broker_id?: string | null
           company_id: string
           cpf?: string | null
           created_at?: string | null
+          created_by?: string | null
           email?: string | null
           id?: string
           name: string
@@ -248,9 +312,11 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          broker_id?: string | null
           company_id?: string
           cpf?: string | null
           created_at?: string | null
+          created_by?: string | null
           email?: string | null
           id?: string
           name?: string
@@ -263,10 +329,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "contacts_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contacts_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -280,10 +360,12 @@ export type Database = {
       }
       pipeline_leads: {
         Row: {
+          assigned_broker_id: string | null
           broker_id: string | null
           company_id: string
           contact_id: string | null
           created_at: string | null
+          created_by: string | null
           has_active_proposal: boolean | null
           has_pending_task: boolean | null
           id: string
@@ -304,10 +386,12 @@ export type Database = {
           won_at: string | null
         }
         Insert: {
+          assigned_broker_id?: string | null
           broker_id?: string | null
           company_id: string
           contact_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           has_active_proposal?: boolean | null
           has_pending_task?: boolean | null
           id?: string
@@ -328,10 +412,12 @@ export type Database = {
           won_at?: string | null
         }
         Update: {
+          assigned_broker_id?: string | null
           broker_id?: string | null
           company_id?: string
           contact_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           has_active_proposal?: boolean | null
           has_pending_task?: boolean | null
           id?: string
@@ -353,6 +439,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "pipeline_leads_assigned_broker_id_fkey"
+            columns: ["assigned_broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pipeline_leads_broker_id_fkey"
             columns: ["broker_id"]
             isOneToOne: false
@@ -371,6 +464,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pipeline_leads_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -477,6 +577,7 @@ export type Database = {
       properties: {
         Row: {
           address: string | null
+          assigned_broker_id: string | null
           bathrooms: number | null
           bedrooms: number | null
           broker_id: string | null
@@ -522,6 +623,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          assigned_broker_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           broker_id?: string | null
@@ -567,6 +669,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          assigned_broker_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           broker_id?: string | null
@@ -611,6 +714,13 @@ export type Database = {
           zip_code?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "properties_assigned_broker_id_fkey"
+            columns: ["assigned_broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "properties_broker_id_fkey"
             columns: ["broker_id"]
@@ -1072,6 +1182,7 @@ export type Database = {
         Args: { _company_id: string }
         Returns: undefined
       }
+      get_user_broker_id: { Args: { _user_id: string }; Returns: string }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
