@@ -364,11 +364,11 @@ const OnboardingPage = () => {
     if (!user) return;
     setSaving(true);
     try {
-      // 1. Promote user to owner (via security definer function)
-      await supabase.rpc("promote_to_owner", { _user_id: user.id });
+      const companyId = crypto.randomUUID();
 
-      // 2. Create company
-      const { data: companyData, error: companyErr } = await supabase.from("companies").insert({
+      // 1. Create company (without RETURNING to avoid RLS SELECT dependency)
+      const { error: companyErr } = await supabase.from("companies").insert({
+        id: companyId,
         name: empresa.name,
         cnpj: empresa.cnpj || null,
         creci: empresa.creci || null,
@@ -378,40 +378,59 @@ const OnboardingPage = () => {
         primary_color: identidade.primaryColor || "#7c3aed",
         secondary_color: identidade.secondaryColor || "#ec4899",
         plan_id: selectedPlan,
-      }).select().single();
+      });
       if (companyErr) throw companyErr;
 
-      // 3. Update profile with company_id and mark onboarding complete
-      const { error: profileErr } = await supabase.from("profiles").update({
-        company_id: companyData.id,
-        onboarding_completed: true,
-      }).eq("id", user.id);
+      // 2. Update profile with company_id and mark onboarding complete
+      const { error: profileErr } = await supabase
+        .from("profiles")
+        .update({
+          company_id: companyId,
+          onboarding_completed: true,
+        })
+        .eq("id", user.id);
       if (profileErr) throw profileErr;
 
+      // 3. Promote user to owner (via security definer function)
+      const { error: promoteErr } = await supabase.rpc("promote_to_owner", { _user_id: user.id });
+      if (promoteErr) throw promoteErr;
+
       // 4. Create default pipeline stages
-      await supabase.rpc("create_default_pipeline_stages", { _company_id: companyData.id });
+      const { error: stagesErr } = await supabase.rpc("create_default_pipeline_stages", {
+        _company_id: companyId,
+      });
+      if (stagesErr) throw stagesErr;
 
       // 5. Create broker record for the owner/admin
       const fullName = user.user_metadata?.full_name || user.email || "Administrador";
-      const initials = fullName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
-      await supabase.from("brokers").insert({
-        company_id: companyData.id,
+      const initials = fullName
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+
+      const { error: ownerBrokerErr } = await supabase.from("brokers").insert({
+        company_id: companyId,
         profile_id: user.id,
         name: fullName,
         email: user.email,
         initials,
       });
+      if (ownerBrokerErr) throw ownerBrokerErr;
 
       // 6. Create broker records for invited team members
       const validMembers = equipe.filter((m) => m.email.trim());
       if (validMembers.length > 0) {
         const brokerInserts = validMembers.map((member) => ({
-          company_id: companyData.id,
+          company_id: companyId,
           name: member.email.split("@")[0],
           email: member.email,
           initials: member.email.slice(0, 2).toUpperCase(),
         }));
-        await supabase.from("brokers").insert(brokerInserts);
+
+        const { error: teamBrokerErr } = await supabase.from("brokers").insert(brokerInserts);
+        if (teamBrokerErr) throw teamBrokerErr;
       }
 
       toast.success("Empresa configurada com sucesso!");
