@@ -55,7 +55,7 @@ Nada que te atrapalha.
           <h2 className="mb-2 text-2xl font-bold text-foreground">
             {isLogin ? "Bem-vindo de volta" : "Crie sua conta"}
           </h2>
-          <p className="mb-8 text-muted-foreground text-sm">
+          <p className="mb-8 text-muted-foreground text-xs">
             {isLogin ? "Acesse sua conta e continue transformando\nsua gestão imobiliária, com a Isafy" : "Comece a usar o ISAFY gratuitamente"}
           </p>
 
