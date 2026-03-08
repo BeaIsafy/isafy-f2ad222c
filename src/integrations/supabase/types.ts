@@ -14,6 +14,73 @@ export type Database = {
   }
   public: {
     Tables: {
+      broker_goals: {
+        Row: {
+          achieved_value: number
+          broker_id: string
+          company_id: string
+          conversions_count: number
+          created_at: string | null
+          id: string
+          leads_count: number
+          month: string
+          profile_id: string | null
+          sales_count: number
+          target_value: number
+          updated_at: string | null
+        }
+        Insert: {
+          achieved_value?: number
+          broker_id: string
+          company_id: string
+          conversions_count?: number
+          created_at?: string | null
+          id?: string
+          leads_count?: number
+          month: string
+          profile_id?: string | null
+          sales_count?: number
+          target_value?: number
+          updated_at?: string | null
+        }
+        Update: {
+          achieved_value?: number
+          broker_id?: string
+          company_id?: string
+          conversions_count?: number
+          created_at?: string | null
+          id?: string
+          leads_count?: number
+          month?: string
+          profile_id?: string | null
+          sales_count?: number
+          target_value?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broker_goals_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broker_goals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broker_goals_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brokers: {
         Row: {
           avatar_url: string | null
@@ -1085,6 +1152,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          device_name: string
+          device_type: string
+          id: string
+          ip_address: string | null
+          is_current: boolean | null
+          last_active_at: string | null
+          location: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_name?: string
+          device_type?: string
+          id?: string
+          ip_address?: string | null
+          is_current?: boolean | null
+          last_active_at?: string | null
+          location?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_name?: string
+          device_type?: string
+          id?: string
+          ip_address?: string | null
+          is_current?: boolean | null
+          last_active_at?: string | null
+          location?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       visits: {
         Row: {
