@@ -46,7 +46,7 @@ interface LeadKanbanCardProps {
   hideProposal?: boolean;
 }
 
-export function LeadKanbanCard({ lead, onClick, onWhatsApp, onCreateTask, onCreateProposal, onScheduleVisit }: LeadKanbanCardProps) {
+export function LeadKanbanCard({ lead, onClick, onWhatsApp, onCreateTask, onCreateProposal, onScheduleVisit, hideProposal }: LeadKanbanCardProps) {
   const TempIcon = tempConfig[lead.temp].icon;
   const slaClass = getSLAClass(lead.daysWithoutUpdate);
 
