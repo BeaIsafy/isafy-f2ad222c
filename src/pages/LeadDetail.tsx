@@ -4,7 +4,7 @@ import {
   ArrowLeft, MessageCircle, Phone, CheckSquare, FileText, XCircle,
   Flame, Thermometer, Snowflake, Send, Building2, BedDouble, Bath,
   Car, Maximize, MapPin, DollarSign, TrendingUp, Clock, AlertTriangle,
-  Plus, User, Mail, Globe, Pencil
+  Plus, User, Mail, Globe, Pencil, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { EditContactModal } from "@/components/leads/EditContactModal";
+import { EditInterestModal } from "@/components/leads/EditInterestModal";
+import { ProposalDetailModal } from "@/components/leads/ProposalDetailModal";
+import { CreateTaskModal } from "@/components/pipeline/CreateTaskModal";
+import { CreateProposalModal } from "@/components/pipeline/CreateProposalModal";
+import { VisitScheduleModal } from "@/components/pipeline/VisitScheduleModal";
 
 const tempConfig = {
   hot: { icon: Flame, label: "Quente", className: "bg-hot/10 text-hot border-hot/20" },
@@ -24,33 +31,14 @@ const tempConfig = {
   cold: { icon: Snowflake, label: "Frio", className: "bg-cold/10 text-cold border-cold/20" },
 };
 
-// Mock data for a single lead
 const mockLead = {
-  id: "1",
-  name: "Carlos Mendes",
-  phone: "(11) 99876-5432",
-  email: "carlos.mendes@email.com",
-  origin: "Portal ZAP",
-  broker: "Ana Costa",
-  brokerInitials: "AC",
-  temp: "warm" as const,
-  stage: "Qualificação",
-  purpose: "Compra",
-  propertyType: "Apartamento",
-  minPrice: 400000,
-  maxPrice: 600000,
-  bedrooms: 2,
-  bathrooms: 2,
-  parkingSpots: 1,
-  minArea: 60,
-  neighborhoods: ["Moema", "Vila Mariana"],
-  cities: ["São Paulo"],
-  closingProbability: 65,
-  avgTimeInStage: "4 dias",
-  slaRemaining: "1 dia",
-  estimatedVGV: 550000,
-  estimatedCommission: 16500,
-  daysWithoutUpdate: 2,
+  id: "1", name: "Carlos Mendes", phone: "(11) 99876-5432", email: "carlos.mendes@email.com",
+  origin: "Portal ZAP", broker: "Ana Costa", brokerInitials: "AC", temp: "warm" as const,
+  stage: "Qualificação", purpose: "Compra", propertyType: "Apartamento",
+  minPrice: 400000, maxPrice: 600000, bedrooms: 2, bathrooms: 2, parkingSpots: 1, minArea: 60,
+  neighborhoods: ["Moema", "Vila Mariana"], cities: ["São Paulo"],
+  closingProbability: 65, avgTimeInStage: "4 dias", slaRemaining: "1 dia",
+  estimatedVGV: 550000, estimatedCommission: 16500, daysWithoutUpdate: 2,
 };
 
 const mockTimeline = [
@@ -69,7 +57,7 @@ const mockMatchProperties = [
 ];
 
 const mockProposals = [
-  { id: "pr1", property: "Apt 2q Moema", value: 510000, status: "Em análise", date: "20/02/2026" },
+  { id: "PR-001", property: "Apt 2q Moema", value: 510000, status: "Em análise", date: "20/02/2026", paymentType: "Financiamento", validity: "7 dias", conditions: "Condicionada à aprovação de crédito." },
 ];
 
 const timelineIcons: Record<string, { icon: typeof MessageCircle; className: string }> = {
@@ -89,8 +77,25 @@ const LeadDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [newNote, setNewNote] = useState("");
-  const lead = mockLead;
+  const [lead, setLead] = useState(mockLead);
   const TempIcon = tempConfig[lead.temp].icon;
+
+  // Modals
+  const [editContactOpen, setEditContactOpen] = useState(false);
+  const [editInterestOpen, setEditInterestOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<typeof mockProposals[0] | null>(null);
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [proposalModalOpen, setProposalModalOpen] = useState(false);
+  const [visitModalOpen, setVisitModalOpen] = useState(false);
+
+  const handleWhatsApp = () => {
+    const phone = lead.phone.replace(/\D/g, "");
+    window.open(`https://wa.me/55${phone}`, "_blank");
+  };
+
+  const handleCall = () => {
+    window.open(`tel:${lead.phone}`, "_self");
+  };
 
   return (
     <div className="space-y-4">
@@ -109,30 +114,31 @@ const LeadDetail = () => {
           <p className="text-sm text-muted-foreground">{lead.stage} · {lead.purpose}</p>
         </div>
         <div className="hidden sm:flex items-center gap-2">
-          <Button size="sm" variant="outline" className="gap-1.5"><MessageCircle size={14} /> WhatsApp</Button>
-          <Button size="sm" variant="outline" className="gap-1.5"><Phone size={14} /> Ligar</Button>
-          <Button size="sm" variant="outline" className="gap-1.5"><CheckSquare size={14} /> Tarefa</Button>
-          <Button size="sm" variant="outline" className="gap-1.5"><MapPin size={14} /> Visita</Button>
-          <Button size="sm" className="gradient-primary text-primary-foreground gap-1.5"><FileText size={14} /> Proposta</Button>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={handleWhatsApp}><MessageCircle size={14} /> WhatsApp</Button>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={handleCall}><Phone size={14} /> Ligar</Button>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTaskModalOpen(true)}><CheckSquare size={14} /> Tarefa</Button>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setVisitModalOpen(true)}><MapPin size={14} /> Visita</Button>
+          <Button size="sm" className="gradient-primary text-primary-foreground gap-1.5" onClick={() => setProposalModalOpen(true)}><FileText size={14} /> Proposta</Button>
         </div>
       </div>
 
-      {/* Mobile: quick action buttons */}
+      {/* Mobile: quick actions */}
       <div className="flex sm:hidden gap-2 overflow-x-auto pb-1">
-        <Button size="sm" variant="outline" className="gap-1 shrink-0"><MessageCircle size={14} /> WhatsApp</Button>
-        <Button size="sm" variant="outline" className="gap-1 shrink-0"><Phone size={14} /> Ligar</Button>
-        <Button size="sm" variant="outline" className="gap-1 shrink-0"><CheckSquare size={14} /> Tarefa</Button>
-        <Button size="sm" variant="outline" className="gap-1 shrink-0"><MapPin size={14} /> Visita</Button>
-        <Button size="sm" className="gradient-primary text-primary-foreground gap-1 shrink-0"><FileText size={14} /> Proposta</Button>
+        <Button size="sm" variant="outline" className="gap-1 shrink-0" onClick={handleWhatsApp}><MessageCircle size={14} /> WhatsApp</Button>
+        <Button size="sm" variant="outline" className="gap-1 shrink-0" onClick={handleCall}><Phone size={14} /> Ligar</Button>
+        <Button size="sm" variant="outline" className="gap-1 shrink-0" onClick={() => setTaskModalOpen(true)}><CheckSquare size={14} /> Tarefa</Button>
+        <Button size="sm" variant="outline" className="gap-1 shrink-0" onClick={() => setVisitModalOpen(true)}><MapPin size={14} /> Visita</Button>
+        <Button size="sm" className="gradient-primary text-primary-foreground gap-1 shrink-0" onClick={() => setProposalModalOpen(true)}><FileText size={14} /> Proposta</Button>
       </div>
 
-      {/* Desktop: 3-column layout | Mobile: tabs */}
+      {/* Desktop: 3-column layout */}
       <div className="hidden lg:grid lg:grid-cols-[280px_1fr_300px] gap-4">
-        <LeftColumn lead={lead} />
+        <LeftColumn lead={lead} onEditContact={() => setEditContactOpen(true)} onEditInterest={() => setEditInterestOpen(true)} />
         <CenterColumn timeline={mockTimeline} newNote={newNote} setNewNote={setNewNote} />
-        <RightColumn properties={mockMatchProperties} proposals={mockProposals} />
+        <RightColumn properties={mockMatchProperties} proposals={mockProposals} leadId={lead.id} onProposalClick={setSelectedProposal} onNewProposal={() => setProposalModalOpen(true)} />
       </div>
 
+      {/* Mobile: tabs */}
       <div className="lg:hidden">
         <Tabs defaultValue="resumo">
           <TabsList className="w-full">
@@ -140,44 +146,48 @@ const LeadDetail = () => {
             <TabsTrigger value="timeline" className="flex-1">Timeline</TabsTrigger>
             <TabsTrigger value="negocios" className="flex-1">Negócios</TabsTrigger>
           </TabsList>
-          <TabsContent value="resumo"><LeftColumn lead={lead} /></TabsContent>
+          <TabsContent value="resumo"><LeftColumn lead={lead} onEditContact={() => setEditContactOpen(true)} onEditInterest={() => setEditInterestOpen(true)} /></TabsContent>
           <TabsContent value="timeline"><CenterColumn timeline={mockTimeline} newNote={newNote} setNewNote={setNewNote} /></TabsContent>
-          <TabsContent value="negocios"><RightColumn properties={mockMatchProperties} proposals={mockProposals} /></TabsContent>
+          <TabsContent value="negocios"><RightColumn properties={mockMatchProperties} proposals={mockProposals} leadId={lead.id} onProposalClick={setSelectedProposal} onNewProposal={() => setProposalModalOpen(true)} /></TabsContent>
         </Tabs>
       </div>
+
+      {/* Modals */}
+      <EditContactModal
+        open={editContactOpen}
+        onClose={() => setEditContactOpen(false)}
+        data={{ name: lead.name, phone: lead.phone, email: lead.email, origin: lead.origin, broker: lead.broker }}
+        onSave={(d) => setLead((prev) => ({ ...prev, ...d }))}
+      />
+      <EditInterestModal
+        open={editInterestOpen}
+        onClose={() => setEditInterestOpen(false)}
+        data={{ propertyType: lead.propertyType, purpose: lead.purpose, minPrice: lead.minPrice, maxPrice: lead.maxPrice, bedrooms: lead.bedrooms, bathrooms: lead.bathrooms, parkingSpots: lead.parkingSpots, minArea: lead.minArea, neighborhoods: lead.neighborhoods }}
+        onSave={(d) => setLead((prev) => ({ ...prev, ...d }))}
+      />
+      <ProposalDetailModal proposal={selectedProposal} onClose={() => setSelectedProposal(null)} />
+      <CreateTaskModal open={taskModalOpen} onClose={() => setTaskModalOpen(false)} leadName={lead.name} />
+      <CreateProposalModal open={proposalModalOpen} onClose={() => setProposalModalOpen(false)} leadName={lead.name} />
+      {visitModalOpen && <VisitScheduleModal open={visitModalOpen} leadName={lead.name} onConfirm={(d) => { toast.success("Visita agendada!"); setVisitModalOpen(false); }} onCancel={() => setVisitModalOpen(false)} />}
     </div>
   );
 };
 
-function LeftColumn({ lead }: { lead: typeof mockLead }) {
+function LeftColumn({ lead, onEditContact, onEditInterest }: { lead: typeof mockLead; onEditContact: () => void; onEditInterest: () => void }) {
   return (
     <div className="space-y-4">
-      {/* Contact info */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-sm">Dados do Contato</CardTitle>
+          <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={onEditContact}><Pencil size={12} /> Editar</Button>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="flex items-center gap-2 text-sm"><User size={14} className="text-muted-foreground shrink-0" /><span>{lead.name}</span></div>
+          <div className="flex items-center gap-2 text-sm"><Phone size={14} className="text-muted-foreground shrink-0" /><span>{lead.phone}</span></div>
+          <div className="flex items-center gap-2 text-sm"><Mail size={14} className="text-muted-foreground shrink-0" /><span className="truncate">{lead.email}</span></div>
+          <div className="flex items-center gap-2 text-sm"><Globe size={14} className="text-muted-foreground shrink-0" /><span>{lead.origin}</span></div>
           <div className="flex items-center gap-2 text-sm">
-            <User size={14} className="text-muted-foreground shrink-0" />
-            <span>{lead.name}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Phone size={14} className="text-muted-foreground shrink-0" />
-            <span>{lead.phone}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Mail size={14} className="text-muted-foreground shrink-0" />
-            <span className="truncate">{lead.email}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Globe size={14} className="text-muted-foreground shrink-0" />
-            <span>{lead.origin}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Avatar className="h-5 w-5">
-              <AvatarFallback className="text-[8px] font-bold bg-primary/10 text-primary">{lead.brokerInitials}</AvatarFallback>
-            </Avatar>
+            <Avatar className="h-5 w-5"><AvatarFallback className="text-[8px] font-bold bg-primary/10 text-primary">{lead.brokerInitials}</AvatarFallback></Avatar>
             <span>{lead.broker}</span>
           </div>
           <div className="pt-1">
@@ -205,10 +215,10 @@ function LeftColumn({ lead }: { lead: typeof mockLead }) {
         </CardContent>
       </Card>
 
-      {/* Interest profile */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-sm">Perfil de Interesse</CardTitle>
+          <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={onEditInterest}><Pencil size={12} /> Editar</Button>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <div className="flex justify-between"><span className="text-muted-foreground">Tipo</span><span>{lead.propertyType}</span></div>
@@ -227,11 +237,8 @@ function LeftColumn({ lead }: { lead: typeof mockLead }) {
         </CardContent>
       </Card>
 
-      {/* Smart indicators */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Indicadores</CardTitle>
-        </CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-sm">Indicadores</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
           <div className="flex justify-between"><span className="text-muted-foreground">Prob. Fechamento</span><span className="font-semibold text-success">{lead.closingProbability}%</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Tempo na etapa</span><span>{lead.avgTimeInStage}</span></div>
@@ -241,7 +248,6 @@ function LeftColumn({ lead }: { lead: typeof mockLead }) {
         </CardContent>
       </Card>
 
-      {/* Lost button */}
       <Button variant="outline" className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10">
         <XCircle size={16} /> Marcar como Perdido
       </Button>
@@ -252,43 +258,20 @@ function LeftColumn({ lead }: { lead: typeof mockLead }) {
 function CenterColumn({ timeline, newNote, setNewNote }: { timeline: typeof mockTimeline; newNote: string; setNewNote: (v: string) => void }) {
   return (
     <Card className="flex flex-col h-fit">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm">Timeline 360</CardTitle>
-      </CardHeader>
+      <CardHeader className="pb-3"><CardTitle className="text-sm">Timeline 360</CardTitle></CardHeader>
       <CardContent className="flex-1 space-y-0">
-        {/* Add note */}
         <div className="mb-4 flex gap-2">
-          <Textarea
-            placeholder="Adicionar nota..."
-            className="min-h-[60px] text-sm resize-none"
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-          />
-          <Button size="icon" className="gradient-primary text-primary-foreground shrink-0 self-end h-9 w-9">
-            <Send size={14} />
-          </Button>
+          <Textarea placeholder="Adicionar nota..." className="min-h-[60px] text-sm resize-none" value={newNote} onChange={(e) => setNewNote(e.target.value)} />
+          <Button size="icon" className="gradient-primary text-primary-foreground shrink-0 self-end h-9 w-9"><Send size={14} /></Button>
         </div>
-
-        {/* Timeline entries */}
         <div className="relative space-y-0">
           {timeline.map((item, i) => {
             const config = timelineIcons[item.type] || timelineIcons.note;
             const Icon = config.icon;
             return (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="relative flex gap-3 pb-4"
-              >
-                {/* Vertical line */}
-                {i < timeline.length - 1 && (
-                  <div className="absolute left-[15px] top-8 h-[calc(100%-16px)] w-px bg-border" />
-                )}
-                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", config.className)}>
-                  <Icon size={14} />
-                </div>
+              <motion.div key={item.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="relative flex gap-3 pb-4">
+                {i < timeline.length - 1 && <div className="absolute left-[15px] top-8 h-[calc(100%-16px)] w-px bg-border" />}
+                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", config.className)}><Icon size={14} /></div>
                 <div className="min-w-0 flex-1 pt-0.5">
                   <p className="text-sm text-foreground">{item.description}</p>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">{item.user} · {item.date}</p>
@@ -302,13 +285,22 @@ function CenterColumn({ timeline, newNote, setNewNote }: { timeline: typeof mock
   );
 }
 
-function RightColumn({ properties, proposals }: { properties: typeof mockMatchProperties; proposals: typeof mockProposals }) {
+function RightColumn({ properties, proposals, leadId, onProposalClick, onNewProposal }: { 
+  properties: typeof mockMatchProperties; 
+  proposals: typeof mockProposals; 
+  leadId: string;
+  onProposalClick: (p: typeof mockProposals[0]) => void;
+  onNewProposal: () => void;
+}) {
+  const navigate = useNavigate();
   return (
     <div className="space-y-4">
-      {/* Match de Imóveis */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-sm">Match de Imóveis</CardTitle>
+          <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => navigate(`/match/${leadId}`)}>
+            <ExternalLink size={12} /> Ver Página
+          </Button>
         </CardHeader>
         <CardContent className="space-y-3">
           {properties.map((p) => (
@@ -328,25 +320,24 @@ function RightColumn({ properties, proposals }: { properties: typeof mockMatchPr
               </div>
               <div className="flex gap-1.5">
                 <Button size="sm" variant="outline" className="flex-1 h-7 text-xs gap-1"><Send size={10} /> Enviar</Button>
-                <Button size="sm" className="flex-1 h-7 text-xs gap-1 gradient-primary text-primary-foreground"><FileText size={10} /> Proposta</Button>
+                <Button size="sm" className="flex-1 h-7 text-xs gap-1 gradient-primary text-primary-foreground" onClick={onNewProposal}><FileText size={10} /> Proposta</Button>
               </div>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      {/* Propostas */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-sm">Propostas</CardTitle>
-          <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs"><Plus size={12} /> Nova</Button>
+          <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={onNewProposal}><Plus size={12} /> Nova</Button>
         </CardHeader>
         <CardContent className="space-y-2">
           {proposals.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">Nenhuma proposta ainda</p>
           ) : (
             proposals.map((pr) => (
-              <div key={pr.id} className="rounded-lg border border-border/50 p-2.5">
+              <div key={pr.id} className="rounded-lg border border-border/50 p-2.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => onProposalClick(pr)}>
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">{pr.property}</p>
                   <Badge variant="secondary" className="text-[10px]">{pr.status}</Badge>
