@@ -30,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { atendimentoLeads } from "@/data/pipelineMockData";
 import { toast } from "sonner";
+import { QuickCreateFAB } from "@/components/dashboard/QuickCreateFAB";
 
 const metrics = [
   { label: "Leads Ativos", value: "127", change: "+12%", up: true, icon: Users },
