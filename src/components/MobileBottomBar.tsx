@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Kanban,
   Building2,
-  Plus,
   MoreHorizontal,
   Users,
   Calendar,
@@ -12,8 +11,6 @@ import {
   Settings,
   HelpCircle,
   User,
-  Home,
-  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,12 +18,6 @@ const mainTabs = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Pipeline", icon: Kanban, path: "/pipeline" },
   { label: "Imóveis", icon: Building2, path: "/properties" },
-];
-
-const fabActions = [
-  { label: "Add Imóvel", action: "add_property" },
-  { label: "Add Lead", action: "add_lead" },
-  { label: "Add Proprietário", action: "add_owner" },
 ];
 
 const moreItems = [
@@ -40,32 +31,16 @@ const moreItems = [
 
 export function MobileBottomBar() {
   const location = useLocation();
-  const [fabOpen, setFabOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
   return (
     <>
-      {/* Overlays */}
-      {(fabOpen || moreOpen) && (
+      {/* Overlay */}
+      {moreOpen && (
         <div
           className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm lg:hidden"
-          onClick={() => { setFabOpen(false); setMoreOpen(false); }}
+          onClick={() => setMoreOpen(false)}
         />
-      )}
-
-      {/* FAB menu */}
-      {fabOpen && (
-        <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-200 lg:hidden">
-          {fabActions.map((a) => (
-            <button
-              key={a.action}
-              onClick={() => { setFabOpen(false); console.log(a.action); }}
-              className="rounded-full bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-lg border border-border"
-            >
-              {a.label}
-            </button>
-          ))}
-        </div>
       )}
 
       {/* More menu */}
@@ -109,22 +84,9 @@ export function MobileBottomBar() {
           );
         })}
 
-        {/* FAB */}
-        <button
-          onClick={() => { setFabOpen(!fabOpen); setMoreOpen(false); }}
-          className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-full transition-all shadow-lg -mt-6",
-            fabOpen
-              ? "bg-muted text-foreground rotate-45"
-              : "gradient-primary text-primary-foreground shadow-primary"
-          )}
-        >
-          {fabOpen ? <X size={22} /> : <Plus size={22} />}
-        </button>
-
         {/* More */}
         <button
-          onClick={() => { setMoreOpen(!moreOpen); setFabOpen(false); }}
+          onClick={() => setMoreOpen(!moreOpen)}
           className={cn(
             "flex flex-col items-center gap-0.5 px-3 py-1",
             moreOpen ? "text-primary" : "text-muted-foreground"
