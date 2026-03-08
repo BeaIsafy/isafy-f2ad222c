@@ -21,6 +21,8 @@ import Reports from "./pages/Reports";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SupportPage from "./pages/SupportPage";
+import ProposalView from "./pages/ProposalView";
+import MatchPage from "./pages/MatchPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +37,8 @@ const App = () => (
           <Route path="/" element={<AuthPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/proposal-view/:token" element={<ProposalView />} />
+          <Route path="/match/:leadId" element={<MatchPage />} />
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pipeline" element={<Pipeline />} />
