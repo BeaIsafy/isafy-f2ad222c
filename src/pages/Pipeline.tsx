@@ -380,8 +380,9 @@ const Pipeline = () => {
                                     }}
                                     onWhatsApp={() => handleCardWhatsApp(lead)}
                                     onCreateTask={() => handleCardTask(lead)}
-                                    onCreateProposal={() => handleCardProposal(lead)}
+                                    onCreateProposal={activeType !== "captacao" ? () => handleCardProposal(lead) : undefined}
                                     onScheduleVisit={() => handleCardVisit(lead)}
+                                    hideProposal={activeType === "captacao"}
                                   />
                                 </div>
                               )}
