@@ -9,6 +9,7 @@ import {
   Settings,
   HelpCircle,
   User,
+  FileText,
   LogOut } from
 "lucide-react";
 import logoIsafy from "@/assets/logo-isafy.png";
