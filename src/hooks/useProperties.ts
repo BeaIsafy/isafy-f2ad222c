@@ -29,7 +29,7 @@ export function useProperties() {
       if (!company?.id) throw new Error("Company not found");
       const { data, error } = await supabase
         .from("properties")
-        .insert({ ...property, company_id: company.id })
+        .insert({ ...property, company_id: company.id } as any)
         .select()
         .single();
       if (error) throw error;
