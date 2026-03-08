@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
   format,
@@ -37,7 +37,15 @@ type ViewType = "dia" | "semana" | "mes";
 
 const CalendarPage = () => {
   const isMobile = useIsMobile();
-  const [view, setView] = useState<ViewType>(isMobile ? "dia" : "semana");
+  const [view, setView] = useState<ViewType>("semana");
+  const [mobileInitialized, setMobileInitialized] = useState(false);
+
+  useEffect(() => {
+    if (isMobile && !mobileInitialized) {
+      setView("dia");
+      setMobileInitialized(true);
+    }
+  }, [isMobile, mobileInitialized]);
   const [currentDate, setCurrentDate] = useState(today);
   const [showNewEvent, setShowNewEvent] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
