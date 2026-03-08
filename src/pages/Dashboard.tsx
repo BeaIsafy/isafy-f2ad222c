@@ -58,7 +58,13 @@ const pipelineLabels: Record<string, string> = {
 
 /* ---- Sub-components ---- */
 
-function MetricsGrid() {
+function MetricsGrid({ stats }: { stats: any }) {
+  const metrics = [
+    { label: "Leads Ativos", value: String(stats?.activeLeads ?? 0), icon: Users },
+    { label: "Imóveis", value: String(stats?.properties ?? 0), icon: Building2 },
+    { label: "VGV", value: `R$ ${((stats?.vgv ?? 0) / 1000000).toFixed(1)}M`, icon: DollarSign },
+    { label: "Contatos", value: String(stats?.contacts ?? 0), icon: Target },
+  ];
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {metrics.map((m, i) => (
@@ -72,10 +78,7 @@ function MetricsGrid() {
                 <p className="text-xs font-medium text-muted-foreground">{m.label}</p>
                 <p className="text-xl font-bold text-foreground">{m.value}</p>
               </div>
-              <div className={`flex items-center gap-1 text-xs font-semibold ${m.up ? "text-success" : "text-destructive"}`}>
-                {m.up ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                {m.change}
-              </div>
+              <TrendingUp size={14} className="text-success" />
             </CardContent>
           </Card>
         </motion.div>
