@@ -352,7 +352,66 @@ function EquipeTab() {
 
 /* ───────── INTEGRAÇÕES TAB ───────── */
 function IntegracoesTab() {
+  const { company } = useAuth();
   const [wpModal, setWpModal] = useState(false);
+  const [wpUrl, setWpUrl] = useState("");
+  const [wpUser, setWpUser] = useState("");
+  const [wpPass, setWpPass] = useState("");
+  const [wpSaving, setWpSaving] = useState(false);
+  const [wpConnected, setWpConnected] = useState(false);
+
+  // Load existing WP config
+  useEffect(() => {
+    if (!company?.id) return;
+    supabase.from("wordpress_configs").select("*").eq("company_id", company.id).single().then(({ data }) => {
+      if (data) {
+        setWpUrl(data.wp_url);
+        setWpUser(data.wp_user);
+        setWpPass(data.wp_app_password);
+        setWpConnected(true);
+      }
+    });
+  }, [company?.id]);
+
+  const handleWpSave = async () => {
+    if (!company?.id || !wpUrl || !wpUser || !wpPass) {
+      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+    setWpSaving(true);
+    try {
+      const { error } = await supabase.from("wordpress_configs").upsert({
+        company_id: company.id,
+        wp_url: wpUrl.replace(/\/$/, ""),
+        wp_user: wpUser,
+        wp_app_password: wpPass,
+        is_active: true,
+      }, { onConflict: "company_id" });
+      if (error) throw error;
+      setWpConnected(true);
+      setWpModal(false);
+      toast({ title: "WordPress configurado com sucesso!" });
+    } catch (err: any) {
+      toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+    } finally {
+      setWpSaving(false);
+    }
+  };
+
+  const handleWpDisconnect = async () => {
+    if (!company?.id) return;
+    await supabase.from("wordpress_configs").delete().eq("company_id", company.id);
+    setWpUrl("");
+    setWpUser("");
+    setWpPass("");
+    setWpConnected(false);
+    toast({ title: "WordPress desconectado" });
+  };
+
+  // Update integration connected status dynamically
+  const integrationsWithStatus = integrations.map(i => 
+    i.id === "wordpress" ? { ...i, connected: wpConnected } : i
+  );
 
   const categories = [
     { key: "site", title: "Site" },
@@ -366,7 +425,7 @@ function IntegracoesTab() {
         <div key={cat.key} className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">{cat.title}</h3>
           <div className="grid gap-3 sm:grid-cols-2">
-            {integrations.filter(i => i.category === cat.key).map(integ => (
+            {integrationsWithStatus.filter(i => i.category === cat.key).map(integ => (
               <Card key={integ.id} className="shadow-card border-border/50">
                 <CardContent className="flex items-center gap-4 p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
@@ -401,14 +460,19 @@ function IntegracoesTab() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Globe size={18} className="text-primary" /> Configurar WordPress</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><label className="text-sm font-medium text-foreground">URL do WordPress</label><Input placeholder="https://www.seusite.com.br" className="mt-1" /></div>
-            <div><label className="text-sm font-medium text-foreground">Usuário (Application Password)</label><Input placeholder="admin" className="mt-1" /></div>
-            <div><label className="text-sm font-medium text-foreground">Senha (Application Password)</label><Input type="password" placeholder="xxxx xxxx xxxx xxxx" className="mt-1" /></div>
-            <p className="text-xs text-muted-foreground">Utilize senhas de aplicação do WordPress para autenticação Basic Auth.</p>
+            <div><label className="text-sm font-medium text-foreground">URL do WordPress</label><Input placeholder="https://www.seusite.com.br" className="mt-1" value={wpUrl} onChange={e => setWpUrl(e.target.value)} /></div>
+            <div><label className="text-sm font-medium text-foreground">Usuário (Application Password)</label><Input placeholder="admin" className="mt-1" value={wpUser} onChange={e => setWpUser(e.target.value)} /></div>
+            <div><label className="text-sm font-medium text-foreground">Senha (Application Password)</label><Input type="password" placeholder="xxxx xxxx xxxx xxxx" className="mt-1" value={wpPass} onChange={e => setWpPass(e.target.value)} /></div>
+            <p className="text-xs text-muted-foreground">Utilize senhas de aplicação do WordPress para autenticação Basic Auth. Gere em Usuários → Perfil → Senhas de Aplicação.</p>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {wpConnected && (
+              <Button variant="destructive" size="sm" onClick={handleWpDisconnect} className="mr-auto">Desconectar</Button>
+            )}
             <Button variant="outline" onClick={() => setWpModal(false)}>Cancelar</Button>
-            <Button className="gradient-primary text-primary-foreground shadow-primary" onClick={() => { setWpModal(false); toast({ title: "WordPress conectado!" }); }}>Salvar Conexão</Button>
+            <Button className="gradient-primary text-primary-foreground shadow-primary" onClick={handleWpSave} disabled={wpSaving}>
+              {wpSaving ? "Salvando..." : "Salvar Conexão"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
