@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import {
   Building2,
   Palette,
@@ -258,11 +261,13 @@ const StepConcluir = ({ data, plan }: { data: any; plan: string }) => {
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [current, setCurrent] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState("performance");
   const [empresa, setEmpresa] = useState<any>({});
   const [identidade, setIdentidade] = useState<any>({});
   const [equipe, setEquipe] = useState<{ email: string; role: string }[]>([{ email: "", role: "corretor" }]);
+  const [saving, setSaving] = useState(false);
 
   const planObj = plans.find((p) => p.id === selectedPlan);
   const teamEnabled = planObj?.teamEnabled ?? false;
@@ -276,9 +281,71 @@ const OnboardingPage = () => {
     return true;
   };
 
+  const finishOnboarding = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      // 1. Create company
+      const { data: companyData, error: companyErr } = await supabase.from("companies").insert({
+        name: empresa.name,
+        cnpj: empresa.cnpj || null,
+        creci: empresa.creci || null,
+        phone: empresa.phone || null,
+        email: empresa.email || null,
+        primary_color: identidade.primaryColor || "#7c3aed",
+        secondary_color: identidade.secondaryColor || "#ec4899",
+        plan_id: selectedPlan,
+      }).select().single();
+      if (companyErr) throw companyErr;
+
+      // 2. Update profile with company_id and mark onboarding complete
+      const { error: profileErr } = await supabase.from("profiles").update({
+        company_id: companyData.id,
+        onboarding_completed: true,
+      }).eq("id", user.id);
+      if (profileErr) throw profileErr;
+
+      // 3. Update role to owner
+      await supabase.from("user_roles").update({ role: "owner" as any }).eq("user_id", user.id);
+
+      // 4. Create default pipeline stages
+      await supabase.rpc("create_default_pipeline_stages", { _company_id: companyData.id });
+
+      // 5. Create broker record for the owner
+      const fullName = user.user_metadata?.full_name || user.email || "Dono";
+      const initials = fullName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+      await supabase.from("brokers").insert({
+        company_id: companyData.id,
+        profile_id: user.id,
+        name: fullName,
+        email: user.email,
+        initials,
+      });
+
+      // 6. Create broker records for invited team members
+      for (const member of equipe) {
+        if (member.email.trim()) {
+          await supabase.from("brokers").insert({
+            company_id: companyData.id,
+            name: member.email.split("@")[0],
+            email: member.email,
+            initials: member.email.slice(0, 2).toUpperCase(),
+          });
+        }
+      }
+
+      toast.success("Empresa configurada com sucesso!");
+      navigate("/dashboard");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const next = () => {
     if (current < visibleSteps.length - 1) setCurrent(current + 1);
-    else navigate("/dashboard");
+    else finishOnboarding();
   };
 
   const prev = () => {
@@ -357,7 +424,7 @@ const OnboardingPage = () => {
             disabled={!canNext()}
             className="gap-2 gradient-primary text-primary-foreground shadow-primary"
           >
-            {currentStep.id === "concluir" ? "Acessar Dashboard" : "Próximo"}
+            {saving ? "Salvando..." : currentStep.id === "concluir" ? "Acessar Dashboard" : "Próximo"}
             <ArrowRight size={16} />
           </Button>
         </div>
