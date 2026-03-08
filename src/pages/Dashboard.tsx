@@ -117,7 +117,7 @@ function MonthlyGoalCard() {
   );
 }
 
-function NewLeadsCard({ navigate }: { navigate: (p: string) => void }) {
+function NewLeadsCard({ navigate, leads }: { navigate: (p: string) => void; leads: any[] }) {
   return (
     <Card className="shadow-card border-border/50 h-full">
       <CardHeader className="pb-3">
@@ -126,24 +126,24 @@ function NewLeadsCard({ navigate }: { navigate: (p: string) => void }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {newLeads.map((lead) => (
+        {leads.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum lead ainda.</p>}
+        {leads.slice(0, 5).map((lead: any) => (
           <div
             key={lead.id}
             onClick={() => navigate(`/leads/${lead.id}`)}
             className="flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors hover:bg-muted/50 cursor-pointer"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-              {lead.name.charAt(0)}
+              {(lead.name || "?").charAt(0)}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground truncate">{lead.name}</p>
               <p className="text-xs text-muted-foreground truncate">{lead.purpose} · {lead.neighborhood}</p>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tempColors[lead.temp]}`}>
-                {tempLabels[lead.temp]}
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tempColors[lead.temperature] || "bg-muted"}`}>
+                {tempLabels[lead.temperature] || "—"}
               </span>
-              <span className="text-[10px] text-muted-foreground">{lead.time}</span>
             </div>
           </div>
         ))}
