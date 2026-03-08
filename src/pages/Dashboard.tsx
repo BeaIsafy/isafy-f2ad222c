@@ -378,6 +378,8 @@ const Dashboard = () => {
         onReschedule={handleReschedule}
         onCancel={handleCancelTask}
       />
+
+      <QuickCreateFAB />
     </div>
   );
 };
