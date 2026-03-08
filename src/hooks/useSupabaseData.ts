@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import type { Database } from "@/integrations/supabase/types";
+
+type PipelineType = Database["public"]["Enums"]["pipeline_type"];
 
 // ============================================
 // BROKERS
@@ -35,7 +38,7 @@ export function useContacts() {
       if (!company?.id) return [];
       const { data, error } = await supabase
         .from("contacts")
-        .select("*, broker:brokers(id, name, initials), responsible:profiles!contacts_responsible_id_fkey(id, full_name)")
+        .select("*, broker:brokers(id, name, initials)")
         .eq("company_id", company.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -50,12 +53,21 @@ export function useCreateContact() {
   const { company, user } = useAuth();
   return useMutation({
     mutationFn: async (contact: {
-      name: string; type?: string; phone?: string; email?: string;
-      cpf?: string; address?: string; notes?: string; status?: string;
+      name: string; type?: "Lead" | "Cliente" | "Proprietário"; phone?: string; email?: string;
+      cpf?: string; address?: string; notes?: string; status?: "Ativo" | "Inativo";
       broker_id?: string; responsible_id?: string;
     }) => {
       const { data, error } = await supabase.from("contacts").insert({
-        ...contact,
+        name: contact.name,
+        type: contact.type,
+        phone: contact.phone,
+        email: contact.email,
+        cpf: contact.cpf,
+        address: contact.address,
+        notes: contact.notes,
+        status: contact.status,
+        broker_id: contact.broker_id,
+        responsible_id: contact.responsible_id,
         company_id: company!.id,
         created_by: user!.id,
       }).select().single();
@@ -115,11 +127,36 @@ export function useCreateProperty() {
   const { company, user } = useAuth();
   return useMutation({
     mutationFn: async (property: Record<string, any>) => {
-      const { data, error } = await supabase.from("properties").insert({
-        ...property,
+      const insert = {
+        title: property.title as string,
         company_id: company!.id,
         broker_id: user!.id,
-      }).select().single();
+        code: property.code,
+        category: property.category,
+        type: property.type,
+        status: property.status,
+        purpose: property.purpose,
+        bedrooms: property.bedrooms,
+        suites: property.suites,
+        bathrooms: property.bathrooms,
+        parking_spaces: property.parking_spaces,
+        total_area: property.total_area,
+        useful_area: property.useful_area,
+        address: property.address,
+        neighborhood: property.neighborhood,
+        city: property.city,
+        state: property.state,
+        sale_price: property.sale_price,
+        rent_price: property.rent_price,
+        season_price: property.season_price,
+        iptu: property.iptu,
+        condo_fee: property.condo_fee,
+        description: property.description,
+        images: property.images,
+        cover_image: property.cover_image,
+        assigned_broker_id: property.assigned_broker_id,
+      };
+      const { data, error } = await supabase.from("properties").insert(insert).select().single();
       if (error) throw error;
       return data;
     },
@@ -142,7 +179,7 @@ export function useUpdateProperty() {
 // ============================================
 // PIPELINE STAGES
 // ============================================
-export function usePipelineStages(pipeline?: string) {
+export function usePipelineStages(pipeline?: PipelineType) {
   const { company } = useAuth();
   return useQuery({
     queryKey: ["pipeline_stages", company?.id, pipeline],
@@ -165,7 +202,7 @@ export function usePipelineStages(pipeline?: string) {
 // ============================================
 // PIPELINE LEADS
 // ============================================
-export function usePipelineLeads(pipeline?: string) {
+export function usePipelineLeads(pipeline?: PipelineType) {
   const { company } = useAuth();
   return useQuery({
     queryKey: ["pipeline_leads", company?.id, pipeline],
@@ -189,9 +226,24 @@ export function useCreatePipelineLead() {
   const qc = useQueryClient();
   const { company, user } = useAuth();
   return useMutation({
-    mutationFn: async (lead: Record<string, any>) => {
+    mutationFn: async (lead: {
+      pipeline: PipelineType; stage_name: string; name: string;
+      temperature?: "hot" | "warm" | "cold"; purpose?: "Compra" | "Locação" | "Temporada";
+      min_price?: number; max_price?: number; neighborhood?: string;
+      assigned_broker_id?: string; contact_id?: string; stage_id?: string;
+    }) => {
       const { data, error } = await supabase.from("pipeline_leads").insert({
-        ...lead,
+        pipeline: lead.pipeline,
+        stage_name: lead.stage_name,
+        name: lead.name,
+        temperature: lead.temperature,
+        purpose: lead.purpose,
+        min_price: lead.min_price,
+        max_price: lead.max_price,
+        neighborhood: lead.neighborhood,
+        assigned_broker_id: lead.assigned_broker_id,
+        contact_id: lead.contact_id,
+        stage_id: lead.stage_id,
         company_id: company!.id,
         created_by: user!.id,
       }).select().single();
@@ -239,9 +291,20 @@ export function useCreateProposal() {
   const qc = useQueryClient();
   const { company } = useAuth();
   return useMutation({
-    mutationFn: async (proposal: Record<string, any>) => {
+    mutationFn: async (proposal: {
+      value: number; property_id?: string; contact_id?: string;
+      client_name?: string; client_phone?: string; payment_type?: string;
+      notes?: string; pipeline_lead_id?: string;
+    }) => {
       const { data, error } = await supabase.from("proposals").insert({
-        ...proposal,
+        value: proposal.value,
+        property_id: proposal.property_id,
+        contact_id: proposal.contact_id,
+        client_name: proposal.client_name,
+        client_phone: proposal.client_phone,
+        payment_type: proposal.payment_type,
+        notes: proposal.notes,
+        pipeline_lead_id: proposal.pipeline_lead_id,
         company_id: company!.id,
       }).select().single();
       if (error) throw error;
@@ -309,9 +372,20 @@ export function useCreateCalendarEvent() {
   const qc = useQueryClient();
   const { company, user } = useAuth();
   return useMutation({
-    mutationFn: async (event: Record<string, any>) => {
+    mutationFn: async (event: {
+      title: string; date: string; start_hour: number; end_hour: number;
+      type?: string; pipeline?: PipelineType; contact?: string; address?: string; notes?: string;
+    }) => {
       const { data, error } = await supabase.from("calendar_events").insert({
-        ...event,
+        title: event.title,
+        date: event.date,
+        start_hour: event.start_hour,
+        end_hour: event.end_hour,
+        type: event.type,
+        pipeline: event.pipeline,
+        contact: event.contact,
+        address: event.address,
+        notes: event.notes,
         company_id: company!.id,
         broker_id: user!.id,
       }).select().single();
@@ -347,9 +421,19 @@ export function useCreateTask() {
   const qc = useQueryClient();
   const { company, user } = useAuth();
   return useMutation({
-    mutationFn: async (task: Record<string, any>) => {
+    mutationFn: async (task: {
+      title: string; description?: string; due_date?: string; due_time?: string;
+      pipeline_lead_id?: string; property_id?: string; contact_id?: string; assigned_to?: string;
+    }) => {
       const { data, error } = await supabase.from("tasks").insert({
-        ...task,
+        title: task.title,
+        description: task.description,
+        due_date: task.due_date,
+        due_time: task.due_time,
+        pipeline_lead_id: task.pipeline_lead_id,
+        property_id: task.property_id,
+        contact_id: task.contact_id,
+        assigned_to: task.assigned_to,
         company_id: company!.id,
         created_by: user!.id,
       }).select().single();
@@ -397,9 +481,15 @@ export function useCreateSupportTicket() {
   const qc = useQueryClient();
   const { company, user } = useAuth();
   return useMutation({
-    mutationFn: async (ticket: { subject: string; category?: string; priority?: string; description?: string }) => {
+    mutationFn: async (ticket: {
+      subject: string; category?: "bug" | "feature" | "duvida" | "financeiro" | "outro";
+      priority?: "baixa" | "media" | "alta" | "urgente"; description?: string;
+    }) => {
       const { data, error } = await supabase.from("support_tickets").insert({
-        ...ticket,
+        subject: ticket.subject,
+        category: ticket.category,
+        priority: ticket.priority,
+        description: ticket.description,
         company_id: company!.id,
         user_id: user!.id,
       }).select().single();
@@ -439,9 +529,16 @@ export function useCreateTimelineEvent() {
   const qc = useQueryClient();
   const { company, user, profile } = useAuth();
   return useMutation({
-    mutationFn: async (event: Record<string, any>) => {
+    mutationFn: async (event: {
+      type: "proposta" | "visita" | "status" | "edicao" | "publicacao" | "captacao" | "nota" | "whatsapp" | "ligacao" | "email";
+      description: string; property_id?: string; contact_id?: string; pipeline_lead_id?: string;
+    }) => {
       const { data, error } = await supabase.from("timeline_events").insert({
-        ...event,
+        type: event.type,
+        description: event.description,
+        property_id: event.property_id,
+        contact_id: event.contact_id,
+        pipeline_lead_id: event.pipeline_lead_id,
         company_id: company!.id,
         actor_id: user!.id,
         actor_name: profile?.full_name || "",
@@ -465,7 +562,7 @@ export function useDashboardStats() {
       const [contactsRes, propertiesRes, leadsRes, proposalsRes, tasksRes] = await Promise.all([
         supabase.from("contacts").select("id", { count: "exact", head: true }).eq("company_id", company.id),
         supabase.from("properties").select("id", { count: "exact", head: true }).eq("company_id", company.id),
-        supabase.from("pipeline_leads").select("id", { count: "exact", head: true }).eq("company_id", company.id).eq("pipeline", "atendimento"),
+        supabase.from("pipeline_leads").select("id", { count: "exact", head: true }).eq("company_id", company.id).eq("pipeline", "atendimento" as PipelineType),
         supabase.from("proposals").select("id, value, status").eq("company_id", company.id),
         supabase.from("tasks").select("id, is_completed, due_date, title").eq("company_id", company.id).eq("is_completed", false).order("due_date").limit(10),
       ]);
