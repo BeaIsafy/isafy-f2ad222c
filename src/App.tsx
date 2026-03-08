@@ -50,6 +50,7 @@ const App = () => (
             <Route path="/contacts/:id" element={<ContactDetail />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/properties/new" element={<PropertyNew />} />
+            <Route path="/properties/:id" element={<PropertyDetail />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<SettingsPage />} />
