@@ -553,6 +553,137 @@ export function useCreateTimelineEvent() {
 // ============================================
 // DASHBOARD STATS
 // ============================================
+// ============================================
+// BROKER GOALS
+// ============================================
+export function useBrokerGoals(brokerId?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["broker_goals", company?.id, brokerId],
+    queryFn: async () => {
+      if (!company?.id) return [];
+      let query = supabase
+        .from("broker_goals")
+        .select("*")
+        .eq("company_id", company.id)
+        .order("month", { ascending: false });
+      if (brokerId) query = query.eq("broker_id", brokerId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!company?.id,
+  });
+}
+
+export function useCurrentMonthGoal(brokerId?: string) {
+  const { company } = useAuth();
+  const currentMonth = new Date();
+  currentMonth.setDate(1);
+  const monthStr = currentMonth.toISOString().split("T")[0];
+  return useQuery({
+    queryKey: ["broker_goals_current", company?.id, brokerId, monthStr],
+    queryFn: async () => {
+      if (!company?.id || !brokerId) return null;
+      const { data, error } = await supabase
+        .from("broker_goals")
+        .select("*")
+        .eq("company_id", company.id)
+        .eq("broker_id", brokerId)
+        .eq("month", monthStr)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!company?.id && !!brokerId,
+  });
+}
+
+export function useUpsertBrokerGoal() {
+  const qc = useQueryClient();
+  const { company, user } = useAuth();
+  return useMutation({
+    mutationFn: async (goal: {
+      broker_id: string; month: string; target_value: number;
+      achieved_value?: number; sales_count?: number; leads_count?: number; conversions_count?: number;
+    }) => {
+      const { data, error } = await supabase.from("broker_goals").upsert({
+        company_id: company!.id,
+        profile_id: user!.id,
+        broker_id: goal.broker_id,
+        month: goal.month,
+        target_value: goal.target_value,
+        achieved_value: goal.achieved_value ?? 0,
+        sales_count: goal.sales_count ?? 0,
+        leads_count: goal.leads_count ?? 0,
+        conversions_count: goal.conversions_count ?? 0,
+      }, { onConflict: "broker_id,month" }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["broker_goals"] }),
+  });
+}
+
+// ============================================
+// USER SESSIONS
+// ============================================
+export function useUserSessions() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["user_sessions", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("user_sessions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("last_active_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user?.id,
+  });
+}
+
+export function useUpsertSession() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (session: {
+      device_name: string; device_type: string; ip_address?: string;
+      location?: string; user_agent?: string; is_current?: boolean;
+    }) => {
+      const { data, error } = await supabase.from("user_sessions").insert({
+        user_id: user!.id,
+        device_name: session.device_name,
+        device_type: session.device_type,
+        ip_address: session.ip_address,
+        location: session.location,
+        user_agent: session.user_agent,
+        is_current: session.is_current ?? false,
+      }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["user_sessions"] }),
+  });
+}
+
+export function useDeleteSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("user_sessions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["user_sessions"] }),
+  });
+}
+
+// ============================================
+// DASHBOARD STATS
+// ============================================
 export function useDashboardStats() {
   const { company } = useAuth();
   return useQuery({
