@@ -277,42 +277,45 @@ function TaskDetailDialog({
 const Dashboard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [tasks, setTasks] = useState(initialTasks);
+  const { data: stats } = useDashboardStats();
+  const { data: leads = [] } = usePipelineLeads("atendimento" as any);
+  const { data: dbTasks = [] } = useTasks();
+  const updateTask = useUpdateTask();
+
+  const tasks: TaskItem[] = (dbTasks as any[]).map((t) => ({
+    id: t.id,
+    title: t.title,
+    time: t.due_time || "",
+    done: t.is_completed,
+    pipeline: null,
+    description: t.description,
+  }));
+
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!selectedTask) return;
-    setTasks((prev) => prev.map((t) => (t.id === selectedTask.id ? { ...t, done: true } : t)));
+    await updateTask.mutateAsync({ id: selectedTask.id, is_completed: true, completed_at: new Date().toISOString() });
     setSelectedTask(null);
     toast.success("Tarefa concluída!");
   };
 
   const handleReschedule = () => {
     setSelectedTask(null);
-    toast.info("Reagendamento em breve — funcionalidade será conectada ao calendário.");
+    toast.info("Reagendamento em breve.");
   };
 
   const handleCancelTask = () => {
-    if (!selectedTask) return;
-    setTasks((prev) => prev.filter((t) => t.id !== selectedTask.id));
     setSelectedTask(null);
     toast("Tarefa cancelada.");
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Visão geral do seu desempenho</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <select className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground">
-            <option>Últimos 30 dias</option>
-            <option>Últimos 7 dias</option>
-            <option>Últimos 90 dias</option>
-          </select>
         </div>
       </div>
 
@@ -322,22 +325,22 @@ const Dashboard = () => {
             <TodayTasksCard tasks={tasks} onTaskClick={setSelectedTask} />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <NewLeadsCard navigate={navigate} />
+            <NewLeadsCard navigate={navigate} leads={leads as any[]} />
           </motion.div>
-          <MetricsGrid />
+          <MetricsGrid stats={stats} />
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <MonthlyGoalCard />
           </motion.div>
         </div>
       ) : (
         <>
-          <MetricsGrid />
+          <MetricsGrid stats={stats} />
           <div className="grid gap-6 lg:grid-cols-3">
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
               <MonthlyGoalCard />
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-              <NewLeadsCard navigate={navigate} />
+              <NewLeadsCard navigate={navigate} leads={leads as any[]} />
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
               <TodayTasksCard tasks={tasks} onTaskClick={setSelectedTask} />
