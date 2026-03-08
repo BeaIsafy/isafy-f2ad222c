@@ -24,6 +24,7 @@ import ProfilePage from "./pages/ProfilePage";
 import SupportPage from "./pages/SupportPage";
 import ProposalView from "./pages/ProposalView";
 import MatchPage from "./pages/MatchPage";
+import ProposalsPage from "./pages/ProposalsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/properties/new" element={<PropertyNew />} />
             <Route path="/properties/:id" element={<PropertyDetail />} />
             <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/proposals" element={<ProposalsPage />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
