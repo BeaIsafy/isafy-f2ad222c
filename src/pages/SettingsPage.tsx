@@ -41,12 +41,6 @@ const integrations = [
   { id: "imovelweb", name: "Imóvel Web", desc: "Publique no portal Imóvel Web", icon: ShoppingBag, connected: false, category: "portal" },
 ];
 
-const mockInvoices = [
-  { id: "INV-2024-012", date: "01/03/2026", amount: "R$ 335,00", status: "paid" },
-  { id: "INV-2024-011", date: "01/02/2026", amount: "R$ 335,00", status: "paid" },
-  { id: "INV-2024-010", date: "01/01/2026", amount: "R$ 335,00", status: "paid" },
-  { id: "INV-2024-009", date: "01/12/2025", amount: "R$ 335,00", status: "overdue" },
-];
 
 /* ───────── EMPRESA TAB ───────── */
 function EmpresaTab() {
@@ -427,11 +421,32 @@ function AssinaturaTab() {
   const { company } = useAuth();
   const { data: brokers = [] } = useBrokers();
   const [showPlans, setShowPlans] = useState(false);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
 
   const planId = company?.plan_id || "start";
   const currentPlan = plans.find(p => p.id === planId) || plans[0];
   const usedMembers = brokers.length;
-  const usedStorage = 0;
+
+  useEffect(() => {
+    if (!company?.id) return;
+    const fetchBillingData = async () => {
+      setLoadingInvoices(true);
+      const [subRes, invRes] = await Promise.all([
+        supabase.from("subscriptions").select("*").eq("company_id", company.id).single(),
+        supabase.from("invoices").select("*").eq("company_id", company.id).order("created_at", { ascending: false }),
+      ]);
+      setSubscription(subRes.data);
+      setInvoices(invRes.data || []);
+      setLoadingInvoices(false);
+    };
+    fetchBillingData();
+  }, [company?.id]);
+
+  const nextBilling = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString("pt-BR")
+    : "—";
 
   return (
     <div className="space-y-6">
@@ -442,7 +457,9 @@ function AssinaturaTab() {
               <Crown size={22} className="text-primary-foreground" />
               <div>
                 <p className="text-lg font-bold text-primary-foreground">{currentPlan.name}</p>
-                <p className="text-xs text-primary-foreground/80">Plano ativo</p>
+                <p className="text-xs text-primary-foreground/80">
+                  {subscription?.status === "active" ? "Plano ativo" : subscription?.status === "trial" ? "Período de teste" : "Plano ativo"}
+                </p>
               </div>
             </div>
             <div className="text-right">
@@ -453,7 +470,7 @@ function AssinaturaTab() {
         <CardContent className="grid gap-4 pt-6 sm:grid-cols-3">
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">Próxima cobrança</p>
-            <p className="text-sm font-semibold text-foreground">—</p>
+            <p className="text-sm font-semibold text-foreground">{nextBilling}</p>
           </div>
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">Membros</p>
@@ -463,11 +480,8 @@ function AssinaturaTab() {
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Armazenamento</p>
-            <div className="flex items-center gap-2">
-              <Progress value={0} className="h-2 flex-1" />
-              <span className="text-xs font-medium text-foreground">0 GB / {currentPlan.storage}</span>
-            </div>
+            <p className="text-xs text-muted-foreground">Forma de pagamento</p>
+            <p className="text-sm font-semibold text-foreground">{subscription?.payment_method === "PIX" ? "PIX" : subscription?.payment_method === "CREDIT_CARD" ? "Cartão de crédito" : "—"}</p>
           </div>
         </CardContent>
         <div className="border-t border-border px-6 py-3 flex justify-end">
@@ -492,18 +506,32 @@ function AssinaturaTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockInvoices.map(inv => (
+            {loadingInvoices ? (
+              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Carregando faturas...</TableCell></TableRow>
+            ) : invoices.length === 0 ? (
+              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma fatura encontrada</TableCell></TableRow>
+            ) : invoices.map(inv => (
               <TableRow key={inv.id}>
-                <TableCell className="text-sm font-medium text-foreground">{inv.id}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{inv.date}</TableCell>
-                <TableCell className="text-sm text-foreground">{inv.amount}</TableCell>
+                <TableCell className="text-sm font-medium text-foreground">{inv.asaas_payment_id || inv.id.slice(0, 8)}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{inv.due_date ? new Date(inv.due_date).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                <TableCell className="text-sm text-foreground">R$ {Number(inv.amount).toFixed(2).replace(".", ",")}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={inv.status === "paid" ? "border-[hsl(var(--success))] text-[hsl(var(--success))]" : "border-destructive text-destructive"}>
-                    {inv.status === "paid" ? "Pago" : "Vencida"}
+                  <Badge variant="outline" className={
+                    inv.status === "paid" ? "border-[hsl(var(--success))] text-[hsl(var(--success))]" :
+                    inv.status === "overdue" ? "border-destructive text-destructive" :
+                    "border-[hsl(var(--warning))] text-[hsl(var(--warning))]"
+                  }>
+                    {inv.status === "paid" ? "Pago" : inv.status === "overdue" ? "Vencida" : "Pendente"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="sm"><ExternalLink size={14} className="mr-1" /> Ver</Button>
+                  {inv.asaas_invoice_url ? (
+                    <Button variant="ghost" size="sm" onClick={() => window.open(inv.asaas_invoice_url, "_blank")}>
+                      <ExternalLink size={14} className="mr-1" /> Ver
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
