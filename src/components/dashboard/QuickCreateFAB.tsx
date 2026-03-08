@@ -62,7 +62,7 @@ export function QuickCreateFAB() {
       </AnimatePresence>
 
       {/* FAB + Cloud */}
-      <div className="fixed bottom-6 right-6 z-50 sm:bottom-8 sm:right-8">
+      <div className="fixed bottom-20 right-6 z-50 sm:bottom-8 sm:right-8 lg:bottom-8">
         <AnimatePresence>
           {open && (
             <div className="absolute bottom-16 right-0 flex flex-col items-end gap-3 mb-2">
