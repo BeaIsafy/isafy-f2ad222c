@@ -24,6 +24,7 @@ import ProfilePage from "./pages/ProfilePage";
 import SupportPage from "./pages/SupportPage";
 import ProposalView from "./pages/ProposalView";
 import MatchPage from "./pages/MatchPage";
+import ProposalsPage from "./pages/ProposalsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
