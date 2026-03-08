@@ -104,7 +104,7 @@ export function LeadKanbanCard({ lead, onClick, onWhatsApp, onCreateTask, onCrea
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onWhatsApp?.(); }}><MessageCircle size={14} className="mr-2" /> Abrir WhatsApp</DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCreateTask?.(); }}><CheckSquare size={14} className="mr-2" /> Criar Tarefa</DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCreateProposal?.(); }}><FileText size={14} className="mr-2" /> Criar Proposta</DropdownMenuItem>
+            {!hideProposal && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCreateProposal?.(); }}><FileText size={14} className="mr-2" /> Criar Proposta</DropdownMenuItem>}
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onScheduleVisit?.(); }}><CalendarPlus size={14} className="mr-2" /> Agendar Visita</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
