@@ -41,12 +41,6 @@ const integrations = [
   { id: "imovelweb", name: "Imóvel Web", desc: "Publique no portal Imóvel Web", icon: ShoppingBag, connected: false, category: "portal" },
 ];
 
-const mockInvoices = [
-  { id: "INV-2024-012", date: "01/03/2026", amount: "R$ 335,00", status: "paid" },
-  { id: "INV-2024-011", date: "01/02/2026", amount: "R$ 335,00", status: "paid" },
-  { id: "INV-2024-010", date: "01/01/2026", amount: "R$ 335,00", status: "paid" },
-  { id: "INV-2024-009", date: "01/12/2025", amount: "R$ 335,00", status: "overdue" },
-];
 
 /* ───────── EMPRESA TAB ───────── */
 function EmpresaTab() {
