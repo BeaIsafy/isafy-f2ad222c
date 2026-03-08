@@ -2,7 +2,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp,
-  TrendingDown,
   Users,
   Building2,
   DollarSign,
@@ -28,35 +27,16 @@ import {
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { atendimentoLeads } from "@/data/pipelineMockData";
 import { toast } from "sonner";
 import { QuickCreateFAB } from "@/components/dashboard/QuickCreateFAB";
+import { useDashboardStats, usePipelineLeads, useTasks, useUpdateTask } from "@/hooks/useSupabaseData";
 
-const metrics = [
-  { label: "Leads Ativos", value: "127", change: "+12%", up: true, icon: Users },
-  { label: "Imóveis", value: "84", change: "+5%", up: true, icon: Building2 },
-  { label: "VGV Mensal", value: "R$ 2.4M", change: "+18%", up: true, icon: DollarSign },
-  { label: "Conversão", value: "8.2%", change: "-1.3%", up: false, icon: Target },
-];
-
-// New leads from atendimento pipeline with IDs
-const newLeadsRaw = atendimentoLeads["Novo Lead"] || [];
-const newLeads = newLeadsRaw.map((lead) => ({
-  id: lead.id,
-  name: lead.name,
-  neighborhood: lead.neighborhood,
-  purpose: lead.purpose,
-  temp: lead.temp,
-  time: lead.lastInteraction,
-  broker: lead.broker,
-}));
-
-const tempColors = {
+const tempColors: Record<string, string> = {
   hot: "bg-hot text-primary-foreground",
   warm: "bg-warning text-primary-foreground",
   cold: "bg-cold text-primary-foreground",
 };
-const tempLabels = { hot: "Quente", warm: "Morno", cold: "Frio" };
+const tempLabels: Record<string, string> = { hot: "Quente", warm: "Morno", cold: "Frio" };
 
 type PipelineType = "captacao" | "atendimento" | "pos-venda" | null;
 
@@ -69,13 +49,6 @@ interface TaskItem {
   description?: string;
   leadName?: string;
 }
-
-const initialTasks: TaskItem[] = [
-  { id: "t1", title: "Visita - Apt 302 Consolação", time: "10:00", done: false, pipeline: "atendimento", description: "Visita agendada no apartamento 302, Rua da Consolação. Cliente interessado em compra.", leadName: "Lucas Oliveira" },
-  { id: "t2", title: "Follow-up Maria Santos", time: "11:30", done: false, pipeline: "captacao", description: "Retornar contato sobre avaliação do imóvel na Vila Madalena.", leadName: "Maria Santos" },
-  { id: "t3", title: "Enviar proposta João Oliveira", time: "14:00", done: false, pipeline: "atendimento", description: "Preparar e enviar proposta formal para casa no Morumbi.", leadName: "João Oliveira" },
-  { id: "t4", title: "Reunião equipe semanal", time: "16:00", done: true, pipeline: null, description: "Reunião de alinhamento semanal com a equipe de corretores." },
-];
 
 const pipelineLabels: Record<string, string> = {
   captacao: "Funil de Captação",
