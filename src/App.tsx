@@ -16,6 +16,7 @@ import Contacts from "./pages/Contacts";
 import ContactDetail from "./pages/ContactDetail";
 import Properties from "./pages/Properties";
 import PropertyNew from "./pages/PropertyNew";
+import PropertyDetail from "./pages/PropertyDetail";
 import CalendarPage from "./pages/CalendarPage";
 import Reports from "./pages/Reports";
 import SettingsPage from "./pages/SettingsPage";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/contacts/:id" element={<ContactDetail />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/properties/new" element={<PropertyNew />} />
+            <Route path="/properties/:id" element={<PropertyDetail />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<SettingsPage />} />

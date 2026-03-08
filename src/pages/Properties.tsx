@@ -123,8 +123,8 @@ const Properties = () => {
               <PropertyCard
                 property={p}
                 viewMode="grid"
-                onView={() => {}}
-                onEdit={() => navigate("/properties/new")}
+                onView={() => navigate(`/properties/${p.id}`)}
+                onEdit={() => navigate(`/properties/${p.id}`)}
                 onImageClick={() => setGallery({ images: p.images, title: p.title })}
                 onDuplicate={() => {}}
               />
@@ -138,8 +138,8 @@ const Properties = () => {
               <PropertyCard
                 property={p}
                 viewMode="list"
-                onView={() => {}}
-                onEdit={() => navigate("/properties/new")}
+                onView={() => navigate(`/properties/${p.id}`)}
+                onEdit={() => navigate(`/properties/${p.id}`)}
                 onImageClick={() => setGallery({ images: p.images, title: p.title })}
                 onDuplicate={() => {}}
               />
