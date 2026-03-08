@@ -119,6 +119,7 @@ export function QuickCreateFAB() {
       />
       <VisitScheduleModal
         open={activeModal === "visita"}
+        leadName=""
         onConfirm={(data) => {
           setActiveModal(null);
           toast.success("Visita agendada com sucesso!");
