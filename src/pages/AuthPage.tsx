@@ -56,7 +56,7 @@ Nada que te atrapalha.
             {isLogin ? "Bem-vindo de volta" : "Crie sua conta"}
           </h2>
           <p className="mb-8 text-muted-foreground text-sm">
-            {isLogin ? "Acesse sua conta para continuar" : "Comece a usar o ISAFY gratuitamente"}
+            {isLogin ? "Acesse sua conta e continue transformando\nsua gestão imobiliária, com a Isafy" : "Comece a usar o ISAFY gratuitamente"}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
