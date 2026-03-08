@@ -43,6 +43,7 @@ interface LeadKanbanCardProps {
   onCreateTask?: () => void;
   onCreateProposal?: () => void;
   onScheduleVisit?: () => void;
+  hideProposal?: boolean;
 }
 
 export function LeadKanbanCard({ lead, onClick, onWhatsApp, onCreateTask, onCreateProposal, onScheduleVisit }: LeadKanbanCardProps) {
