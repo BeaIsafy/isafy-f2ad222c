@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp,
@@ -11,14 +12,24 @@ import {
   Clock,
   ArrowRight,
   Calendar,
+  CalendarClock,
+  XCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { atendimentoLeads } from "@/data/pipelineMockData";
+import { toast } from "sonner";
 
 const metrics = [
   { label: "Leads Ativos", value: "127", change: "+12%", up: true, icon: Users },
@@ -27,13 +38,16 @@ const metrics = [
   { label: "Conversão", value: "8.2%", change: "-1.3%", up: false, icon: Target },
 ];
 
-// New leads from atendimento pipeline
-const newLeads = (atendimentoLeads["Novo Lead"] || []).map((lead) => ({
+// New leads from atendimento pipeline with IDs
+const newLeadsRaw = atendimentoLeads["Novo Lead"] || [];
+const newLeads = newLeadsRaw.map((lead) => ({
+  id: lead.id,
   name: lead.name,
   neighborhood: lead.neighborhood,
   purpose: lead.purpose,
   temp: lead.temp,
   time: lead.lastInteraction,
+  broker: lead.broker,
 }));
 
 const tempColors = {
@@ -46,17 +60,20 @@ const tempLabels = { hot: "Quente", warm: "Morno", cold: "Frio" };
 type PipelineType = "captacao" | "atendimento" | "pos-venda" | null;
 
 interface TaskItem {
+  id: string;
   title: string;
   time: string;
   done: boolean;
   pipeline: PipelineType;
+  description?: string;
+  leadName?: string;
 }
 
-const tasks: TaskItem[] = [
-  { title: "Visita - Apt 302 Consolação", time: "10:00", done: false, pipeline: "atendimento" },
-  { title: "Follow-up Maria Santos", time: "11:30", done: false, pipeline: "captacao" },
-  { title: "Enviar proposta João Oliveira", time: "14:00", done: false, pipeline: "atendimento" },
-  { title: "Reunião equipe semanal", time: "16:00", done: true, pipeline: null },
+const initialTasks: TaskItem[] = [
+  { id: "t1", title: "Visita - Apt 302 Consolação", time: "10:00", done: false, pipeline: "atendimento", description: "Visita agendada no apartamento 302, Rua da Consolação. Cliente interessado em compra.", leadName: "Lucas Oliveira" },
+  { id: "t2", title: "Follow-up Maria Santos", time: "11:30", done: false, pipeline: "captacao", description: "Retornar contato sobre avaliação do imóvel na Vila Madalena.", leadName: "Maria Santos" },
+  { id: "t3", title: "Enviar proposta João Oliveira", time: "14:00", done: false, pipeline: "atendimento", description: "Preparar e enviar proposta formal para casa no Morumbi.", leadName: "João Oliveira" },
+  { id: "t4", title: "Reunião equipe semanal", time: "16:00", done: true, pipeline: null, description: "Reunião de alinhamento semanal com a equipe de corretores." },
 ];
 
 const pipelineLabels: Record<string, string> = {
@@ -134,7 +151,8 @@ function NewLeadsCard({ navigate }: { navigate: (p: string) => void }) {
       <CardContent className="space-y-3">
         {newLeads.map((lead) => (
           <div
-            key={lead.name}
+            key={lead.id}
+            onClick={() => navigate(`/leads/${lead.id}`)}
             className="flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors hover:bg-muted/50 cursor-pointer"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
@@ -160,7 +178,7 @@ function NewLeadsCard({ navigate }: { navigate: (p: string) => void }) {
   );
 }
 
-function TodayTasksCard() {
+function TodayTasksCard({ tasks, onTaskClick }: { tasks: TaskItem[]; onTaskClick: (t: TaskItem) => void }) {
   return (
     <Card className="shadow-card border-border/50 h-full">
       <CardHeader className="pb-3">
@@ -171,8 +189,9 @@ function TodayTasksCard() {
       <CardContent className="space-y-3">
         {tasks.map((task) => (
           <div
-            key={task.title}
-            className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors ${task.done ? "opacity-50" : "hover:bg-muted/50"}`}
+            key={task.id}
+            onClick={() => onTaskClick(task)}
+            className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors cursor-pointer ${task.done ? "opacity-50" : "hover:bg-muted/50"}`}
           >
             <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${task.done ? "bg-success/20" : "bg-muted"}`}>
               {task.done ? <CheckCircle2 size={16} className="text-success" /> : <Clock size={14} className="text-muted-foreground" />}
@@ -195,11 +214,113 @@ function TodayTasksCard() {
   );
 }
 
+function TaskDetailDialog({
+  task,
+  open,
+  onClose,
+  onComplete,
+  onReschedule,
+  onCancel,
+}: {
+  task: TaskItem | null;
+  open: boolean;
+  onClose: () => void;
+  onComplete: () => void;
+  onReschedule: () => void;
+  onCancel: () => void;
+}) {
+  if (!task) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-lg">{task.title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="flex items-center gap-3">
+            <Clock size={16} className="text-muted-foreground" />
+            <span className="text-sm text-foreground">Horário: <span className="font-semibold">{task.time}</span></span>
+          </div>
+          {task.pipeline && (
+            <div className="flex items-center gap-3">
+              <Target size={16} className="text-muted-foreground" />
+              <Badge variant="outline" className="text-xs">
+                {pipelineLabels[task.pipeline]}
+              </Badge>
+            </div>
+          )}
+          {task.leadName && (
+            <div className="flex items-center gap-3">
+              <Users size={16} className="text-muted-foreground" />
+              <span className="text-sm text-foreground">Contato: <span className="font-semibold">{task.leadName}</span></span>
+            </div>
+          )}
+          {task.description && (
+            <div className="rounded-lg bg-muted p-3">
+              <p className="text-sm text-muted-foreground">{task.description}</p>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Status:</span>
+            {task.done ? (
+              <Badge className="bg-success/10 text-success border-success/20">Concluída</Badge>
+            ) : (
+              <Badge className="bg-warning/10 text-warning border-warning/20">Pendente</Badge>
+            )}
+          </div>
+        </div>
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          {!task.done && (
+            <>
+              <Button onClick={onComplete} className="gap-2 w-full sm:w-auto">
+                <CheckCircle2 size={16} /> Concluir
+              </Button>
+              <Button variant="outline" onClick={onReschedule} className="gap-2 w-full sm:w-auto">
+                <CalendarClock size={16} /> Reagendar
+              </Button>
+              <Button variant="outline" onClick={onCancel} className="gap-2 text-destructive hover:text-destructive w-full sm:w-auto">
+                <XCircle size={16} /> Cancelar
+              </Button>
+            </>
+          )}
+          {task.done && (
+            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+              Fechar
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /* ---- Main ---- */
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [tasks, setTasks] = useState(initialTasks);
+  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+
+  const handleComplete = () => {
+    if (!selectedTask) return;
+    setTasks((prev) => prev.map((t) => (t.id === selectedTask.id ? { ...t, done: true } : t)));
+    setSelectedTask(null);
+    toast.success("Tarefa concluída!");
+  };
+
+  const handleReschedule = () => {
+    setSelectedTask(null);
+    toast.info("Reagendamento em breve — funcionalidade será conectada ao calendário.");
+  };
+
+  const handleCancelTask = () => {
+    if (!selectedTask) return;
+    setTasks((prev) => prev.filter((t) => t.id !== selectedTask.id));
+    setSelectedTask(null);
+    toast("Tarefa cancelada.");
+  };
 
   return (
     <div className="space-y-6">
@@ -219,10 +340,9 @@ const Dashboard = () => {
       </div>
 
       {isMobile ? (
-        /* Mobile order: Tarefas → Novos Leads → Métricas → Meta */
         <div className="space-y-6">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <TodayTasksCard />
+            <TodayTasksCard tasks={tasks} onTaskClick={setSelectedTask} />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <NewLeadsCard navigate={navigate} />
@@ -233,7 +353,6 @@ const Dashboard = () => {
           </motion.div>
         </div>
       ) : (
-        /* Desktop layout */
         <>
           <MetricsGrid />
           <div className="grid gap-6 lg:grid-cols-3">
@@ -244,11 +363,20 @@ const Dashboard = () => {
               <NewLeadsCard navigate={navigate} />
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-              <TodayTasksCard />
+              <TodayTasksCard tasks={tasks} onTaskClick={setSelectedTask} />
             </motion.div>
           </div>
         </>
       )}
+
+      <TaskDetailDialog
+        task={selectedTask}
+        open={!!selectedTask}
+        onClose={() => setSelectedTask(null)}
+        onComplete={handleComplete}
+        onReschedule={handleReschedule}
+        onCancel={handleCancelTask}
+      />
     </div>
   );
 };
