@@ -28,11 +28,12 @@ const AuthPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative z-10 max-w-md px-8 text-center"
-        >
+          className="relative z-10 max-w-md px-8 text-center">
+          
           <img src={logoIsafy} alt="ISAFY" className="mx-auto mb-8 h-16 brightness-0 invert" />
           <h1 className="mb-4 text-3xl font-extrabold text-primary-foreground">
-            Sistema Operacional do Corretor
+            Tudo que você precisa.
+Nada que te atrapalha.
           </h1>
           <p className="text-lg text-primary-foreground/80">
             Centralize operações, automatize processos e feche mais negócios.
@@ -42,12 +43,11 @@ const AuthPage = () => {
 
       {/* Right - form */}
       <div className="flex w-full flex-col items-center justify-center px-6 lg:w-1/2">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
-        >
+        <motion.div initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md">
+          
           <div className="mb-8 text-center lg:hidden">
             <img src={logoIsafy} alt="ISAFY" className="mx-auto mb-4 h-12" />
           </div>
@@ -60,11 +60,11 @@ const AuthPage = () => {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="relative">
+            {!isLogin &&
+            <div className="relative">
                 <Input placeholder="Nome completo" className="h-12 pl-4" />
               </div>
-            )}
+            }
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="E-mail" type="email" className="h-12 pl-10" />
@@ -74,24 +74,24 @@ const AuthPage = () => {
               <Input
                 placeholder="Senha"
                 type={showPassword ? "text" : "password"}
-                className="h-12 pl-10 pr-10"
-              />
+                className="h-12 pl-10 pr-10" />
+              
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
 
-            {isLogin && (
-              <div className="text-right">
+            {isLogin &&
+            <div className="text-right">
                 <button type="button" className="text-sm text-primary hover:underline">
                   Esqueci minha senha
                 </button>
               </div>
-            )}
+            }
 
             <Button type="submit" className="h-12 w-full gradient-primary text-primary-foreground font-semibold text-base shadow-primary hover:opacity-90 transition-opacity">
               {isLogin ? "Entrar" : "Criar conta"}
@@ -122,8 +122,8 @@ const AuthPage = () => {
           </p>
         </motion.div>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default AuthPage;
