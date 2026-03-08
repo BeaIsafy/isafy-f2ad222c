@@ -234,6 +234,7 @@ const Pipeline = () => {
   };
 
   const handleCardProposal = (lead: LeadCard) => {
+    if (activeType === "captacao") return; // No proposals in captação pipeline
     setProposalModal({ open: true, leadName: lead.name });
   };
 
