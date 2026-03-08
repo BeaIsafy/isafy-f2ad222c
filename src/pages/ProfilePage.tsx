@@ -22,6 +22,10 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  useBrokers, useBrokerGoals, useCurrentMonthGoal, useUpsertBrokerGoal,
+  useUserSessions, useUpsertSession, useDeleteSession
+} from "@/hooks/useSupabaseData";
 
 const fmt = (v: number) => `R$ ${(v / 1_000_000).toFixed(1)}M`;
 
@@ -37,23 +41,8 @@ const TrendIcon = ({ pct }: { pct: number }) => {
   return <TrendingDown size={14} className="text-destructive" />;
 };
 
-/* ── Mock data (goals/devices - will be real later) ── */
-const mockGoalsHistory = [
-  { month: "Fev 2025", target: 3000000, achieved: 2700000, pct: 90, sales: 5, leads: 42, conversions: 12 },
-  { month: "Jan 2025", target: 2500000, achieved: 1875000, pct: 75, sales: 4, leads: 38, conversions: 10 },
-  { month: "Dez 2024", target: 3000000, achieved: 3300000, pct: 110, sales: 7, leads: 55, conversions: 15 },
-  { month: "Nov 2024", target: 2800000, achieved: 2240000, pct: 80, sales: 3, leads: 30, conversions: 8 },
-  { month: "Out 2024", target: 2500000, achieved: 2000000, pct: 80, sales: 4, leads: 35, conversions: 9 },
-  { month: "Set 2024", target: 2000000, achieved: 1800000, pct: 90, sales: 3, leads: 28, conversions: 7 },
-];
-
-const mockDevices = [
-  { id: "1", name: "Chrome — Windows 11", type: "desktop", ip: "189.45.xxx.xx", lastActive: "Agora (sessão atual)", current: true, location: "São Paulo, SP" },
-  { id: "2", name: "Safari — iPhone 15 Pro", type: "mobile", ip: "189.45.xxx.xx", lastActive: "Há 2 horas", current: false, location: "São Paulo, SP" },
-];
-
 /* ── Sub-page: Goals History ── */
-function GoalsHistoryView({ onBack }: { onBack: () => void }) {
+function GoalsHistoryView({ goals, onBack }: { goals: any[]; onBack: () => void }) {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
       <Button variant="ghost" className="gap-2 mb-4 text-muted-foreground" onClick={onBack}>
@@ -62,45 +51,81 @@ function GoalsHistoryView({ onBack }: { onBack: () => void }) {
       <h2 className="text-xl font-bold text-foreground mb-1">Histórico de Metas</h2>
       <p className="text-sm text-muted-foreground mb-6">Acompanhe seu desempenho mês a mês</p>
 
-      <div className="space-y-4">
-        {mockGoalsHistory.map((g) => (
-          <Card key={g.month} className="shadow-card border-border/50">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">{g.month}</h3>
-                  <TrendIcon pct={g.pct} />
-                </div>
-                <Badge variant={g.pct >= 100 ? "default" : "secondary"} className={g.pct >= 100 ? "gradient-primary text-primary-foreground" : ""}>
-                  {g.pct}% atingida
-                </Badge>
-              </div>
-              <Progress value={Math.min(g.pct, 100)} className="h-2 mb-3" />
-              <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                <span>Alcançado: <strong className="text-foreground">{fmt(g.achieved)}</strong></span>
-                <span>Meta: {fmt(g.target)}</span>
-              </div>
-              <Separator className="mb-3" />
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-lg font-bold text-foreground">{g.sales}</p>
-                  <p className="text-xs text-muted-foreground">Vendas</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-foreground">{g.leads}</p>
-                  <p className="text-xs text-muted-foreground">Leads</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-foreground">{g.conversions}</p>
-                  <p className="text-xs text-muted-foreground">Conversões</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {goals.length === 0 ? (
+        <Card className="shadow-card border-border/50">
+          <CardContent className="p-8 text-center text-muted-foreground">
+            Nenhum histórico de metas encontrado.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {goals.map((g: any) => {
+            const pct = g.target_value > 0 ? Math.round((g.achieved_value / g.target_value) * 100) : 0;
+            const monthDate = new Date(g.month + "T12:00:00");
+            const monthLabel = monthDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+            return (
+              <Card key={g.id} className="shadow-card border-border/50">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground capitalize">{monthLabel}</h3>
+                      <TrendIcon pct={pct} />
+                    </div>
+                    <Badge variant={pct >= 100 ? "default" : "secondary"} className={pct >= 100 ? "gradient-primary text-primary-foreground" : ""}>
+                      {pct}% atingida
+                    </Badge>
+                  </div>
+                  <Progress value={Math.min(pct, 100)} className="h-2 mb-3" />
+                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
+                    <span>Alcançado: <strong className="text-foreground">{fmt(g.achieved_value)}</strong></span>
+                    <span>Meta: {fmt(g.target_value)}</span>
+                  </div>
+                  <Separator className="mb-3" />
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{g.sales_count}</p>
+                      <p className="text-xs text-muted-foreground">Vendas</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{g.leads_count}</p>
+                      <p className="text-xs text-muted-foreground">Leads</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{g.conversions_count}</p>
+                      <p className="text-xs text-muted-foreground">Conversões</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </motion.div>
   );
+}
+
+/* ── Helper: detect device info from user agent ── */
+function getDeviceInfo() {
+  const ua = navigator.userAgent;
+  let deviceName = "Navegador desconhecido";
+  let deviceType = "desktop";
+
+  if (/iPhone|iPad|iPod/.test(ua)) {
+    deviceType = /iPad/.test(ua) ? "tablet" : "mobile";
+    deviceName = `Safari — ${/iPad/.test(ua) ? "iPad" : "iPhone"}`;
+  } else if (/Android/.test(ua)) {
+    deviceType = /Mobile/.test(ua) ? "mobile" : "tablet";
+    deviceName = `Chrome — Android`;
+  } else if (/Chrome/.test(ua)) {
+    deviceName = `Chrome — ${/Mac/.test(ua) ? "macOS" : /Windows/.test(ua) ? "Windows" : "Linux"}`;
+  } else if (/Firefox/.test(ua)) {
+    deviceName = `Firefox — ${/Mac/.test(ua) ? "macOS" : /Windows/.test(ua) ? "Windows" : "Linux"}`;
+  } else if (/Safari/.test(ua)) {
+    deviceName = `Safari — macOS`;
+  }
+
+  return { deviceName, deviceType, userAgent: ua };
 }
 
 /* ── Main Profile Page ── */
@@ -110,9 +135,23 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
 
+  // Brokers - to find current user's broker_id
+  const { data: brokers = [] } = useBrokers();
+  const myBroker = brokers.find((b: any) => b.profile_id === user?.id);
+
+  // Goals
+  const { data: allGoals = [] } = useBrokerGoals(myBroker?.id);
+  const { data: currentGoalData } = useCurrentMonthGoal(myBroker?.id);
+  const upsertGoal = useUpsertBrokerGoal();
+
+  // Sessions
+  const { data: sessions = [], refetch: refetchSessions } = useUserSessions();
+  const upsertSession = useUpsertSession();
+  const deleteSession = useDeleteSession();
+
   const [showGoalsHistory, setShowGoalsHistory] = useState(false);
 
-  // Profile form - populated from Supabase
+  // Profile form
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -128,26 +167,46 @@ const ProfilePage = () => {
     }
   }, [profile, user]);
 
+  // Register current session on mount
+  useEffect(() => {
+    if (!user?.id || !sessions) return;
+    const hasCurrentSession = sessions.some((s: any) => s.is_current);
+    if (!hasCurrentSession && user?.id) {
+      const { deviceName, deviceType, userAgent } = getDeviceInfo();
+      upsertSession.mutate({
+        device_name: deviceName,
+        device_type: deviceType,
+        user_agent: userAgent,
+        is_current: true,
+      });
+    }
+  }, [user?.id, sessions?.length]);
+
   // Password
   const [showPwDialog, setShowPwDialog] = useState(false);
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [showNewPw, setShowNewPw] = useState(false);
 
-  // Goal
-  const [currentGoal, setCurrentGoal] = useState(3000000);
+  // Goal editing
   const [editGoal, setEditGoal] = useState(false);
   const [goalInput, setGoalInput] = useState("3000000");
-  const achieved = 1800000;
-  const goalPct = Math.round((achieved / currentGoal) * 100);
+
+  const currentTarget = currentGoalData?.target_value ?? 0;
+  const currentAchieved = currentGoalData?.achieved_value ?? 0;
+  const goalPct = currentTarget > 0 ? Math.round((currentAchieved / currentTarget) * 100) : 0;
+
+  useEffect(() => {
+    if (currentGoalData) {
+      setGoalInput(String(currentGoalData.target_value));
+    }
+  }, [currentGoalData]);
 
   const handleSaveProfile = async () => {
     if (!user?.id) return;
     setSaving(true);
     const { error } = await supabase.from("profiles").update({
-      full_name: name,
-      phone,
-      creci,
+      full_name: name, phone, creci,
     }).eq("id", user.id);
     setSaving(false);
     if (error) {
@@ -178,11 +237,40 @@ const ProfilePage = () => {
 
   const handleSaveGoal = () => {
     const v = Number(goalInput);
-    if (v > 0) { setCurrentGoal(v); setEditGoal(false); toast({ title: "Meta atualizada" }); }
+    if (v > 0 && myBroker?.id) {
+      const currentMonth = new Date();
+      currentMonth.setDate(1);
+      const monthStr = currentMonth.toISOString().split("T")[0];
+      upsertGoal.mutate({
+        broker_id: myBroker.id,
+        month: monthStr,
+        target_value: v,
+        achieved_value: currentAchieved,
+        sales_count: currentGoalData?.sales_count ?? 0,
+        leads_count: currentGoalData?.leads_count ?? 0,
+        conversions_count: currentGoalData?.conversions_count ?? 0,
+      });
+      setEditGoal(false);
+      toast({ title: "Meta atualizada" });
+    }
   };
 
   const handleLogoutDevice = (id: string) => {
-    toast({ title: "Dispositivo desconectado", description: "A sessão foi encerrada." });
+    deleteSession.mutate(id, {
+      onSuccess: () => {
+        toast({ title: "Dispositivo desconectado", description: "A sessão foi encerrada." });
+        refetchSessions();
+      },
+    });
+  };
+
+  const handleLogoutAll = async () => {
+    // Delete all non-current sessions
+    for (const s of sessions.filter((s: any) => !s.is_current)) {
+      await supabase.from("user_sessions").delete().eq("id", s.id);
+    }
+    toast({ title: "Todas as outras sessões foram encerradas" });
+    refetchSessions();
   };
 
   const initials = name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
@@ -190,7 +278,7 @@ const ProfilePage = () => {
   if (showGoalsHistory) {
     return (
       <AnimatePresence mode="wait">
-        <GoalsHistoryView onBack={() => setShowGoalsHistory(false)} />
+        <GoalsHistoryView goals={allGoals} onBack={() => setShowGoalsHistory(false)} />
       </AnimatePresence>
     );
   }
@@ -219,7 +307,6 @@ const ProfilePage = () => {
                   <CardTitle className="flex items-center gap-2 text-base"><User size={18} className="text-primary" /> Dados Pessoais</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  {/* Avatar */}
                   <div className="flex items-center gap-4">
                     <div className="relative group">
                       {profile?.avatar_url ? (
@@ -242,7 +329,6 @@ const ProfilePage = () => {
                     </div>
                   </div>
 
-                  {/* Fields */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="text-sm font-medium text-foreground">Nome Completo</label>
@@ -271,9 +357,7 @@ const ProfilePage = () => {
                         <Button variant="outline" className="gap-2"><Lock size={14} /> Alterar Senha</Button>
                       </DialogTrigger>
                       <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Alterar Senha</DialogTitle>
-                        </DialogHeader>
+                        <DialogHeader><DialogTitle>Alterar Senha</DialogTitle></DialogHeader>
                         <div className="space-y-4 py-2">
                           <div>
                             <label className="text-sm font-medium text-foreground">Nova Senha</label>
@@ -300,7 +384,6 @@ const ProfilePage = () => {
               </Card>
             </div>
 
-            {/* Danger zone */}
             <div>
               <Card className="shadow-card border-destructive/20">
                 <CardContent className="p-5 space-y-3">
@@ -328,7 +411,9 @@ const ProfilePage = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {editGoal ? (
+                {!myBroker ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Nenhum broker vinculado ao seu perfil.</p>
+                ) : editGoal ? (
                   <div className="space-y-3">
                     <label className="text-sm font-medium text-foreground">Valor da Meta (R$)</label>
                     <Input type="number" value={goalInput} onChange={e => setGoalInput(e.target.value)} />
@@ -336,15 +421,22 @@ const ProfilePage = () => {
                       <Check size={16} /> Salvar Meta
                     </Button>
                   </div>
-                ) : (
+                ) : currentTarget > 0 ? (
                   <>
                     <div className="text-center">
-                      <p className="text-3xl font-extrabold text-gradient">{fmt(achieved)}</p>
-                      <p className="text-sm text-muted-foreground">de {fmt(currentGoal)}</p>
+                      <p className="text-3xl font-extrabold text-gradient">{fmt(currentAchieved)}</p>
+                      <p className="text-sm text-muted-foreground">de {fmt(currentTarget)}</p>
                     </div>
                     <Progress value={Math.min(goalPct, 100)} className="h-3" />
                     <p className="text-center text-xs text-muted-foreground">{goalPct}% atingida</p>
                   </>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">Nenhuma meta definida para este mês.</p>
+                    <Button variant="outline" size="sm" className="mt-2" onClick={() => setEditGoal(true)}>
+                      Definir meta
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -444,31 +536,39 @@ const ProfilePage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-foreground">Dispositivos Conectados</h3>
-                <p className="text-sm text-muted-foreground">{mockDevices.length} sessões ativas</p>
+                <p className="text-sm text-muted-foreground">{sessions.length} sessão(ões) ativa(s)</p>
               </div>
-              <Button variant="outline" size="sm" className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => { signOut(); navigate("/auth"); }}>
-                <LogOut size={14} /> Sair de todas
+              <Button variant="outline" size="sm" className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/5" onClick={handleLogoutAll}>
+                <LogOut size={14} /> Encerrar outras
               </Button>
             </div>
 
-            {mockDevices.map((d) => (
-              <Card key={d.id} className={`shadow-card border-border/50 ${d.current ? "ring-1 ring-primary/30" : ""}`}>
+            {sessions.length === 0 ? (
+              <Card className="shadow-card border-border/50">
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  Nenhuma sessão registrada.
+                </CardContent>
+              </Card>
+            ) : sessions.map((d: any) => (
+              <Card key={d.id} className={`shadow-card border-border/50 ${d.is_current ? "ring-1 ring-primary/30" : ""}`}>
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-                    <DeviceIcon type={d.type} />
+                    <DeviceIcon type={d.device_type} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-foreground truncate">{d.name}</p>
-                      {d.current && <Badge className="gradient-primary text-primary-foreground text-[10px] h-5">Atual</Badge>}
+                      <p className="text-sm font-semibold text-foreground truncate">{d.device_name}</p>
+                      {d.is_current && <Badge className="gradient-primary text-primary-foreground text-[10px] h-5">Atual</Badge>}
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1"><Globe size={10} /> {d.location}</span>
-                      <span className="text-xs text-muted-foreground">IP: {d.ip}</span>
-                      <span className="text-xs text-muted-foreground">{d.lastActive}</span>
+                      {d.location && <span className="text-xs text-muted-foreground flex items-center gap-1"><Globe size={10} /> {d.location}</span>}
+                      {d.ip_address && <span className="text-xs text-muted-foreground">IP: {d.ip_address}</span>}
+                      <span className="text-xs text-muted-foreground">
+                        {d.is_current ? "Agora (sessão atual)" : new Date(d.last_active_at).toLocaleString("pt-BR")}
+                      </span>
                     </div>
                   </div>
-                  {!d.current && (
+                  {!d.is_current && (
                     <Button variant="ghost" size="sm" className="text-destructive text-xs shrink-0" onClick={() => handleLogoutDevice(d.id)}>
                       <LogOut size={14} />
                     </Button>
