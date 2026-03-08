@@ -37,7 +37,15 @@ type ViewType = "dia" | "semana" | "mes";
 
 const CalendarPage = () => {
   const isMobile = useIsMobile();
-  const [view, setView] = useState<ViewType>(isMobile ? "dia" : "semana");
+  const [view, setView] = useState<ViewType>("semana");
+  const [mobileInitialized, setMobileInitialized] = useState(false);
+
+  useEffect(() => {
+    if (isMobile && !mobileInitialized) {
+      setView("dia");
+      setMobileInitialized(true);
+    }
+  }, [isMobile, mobileInitialized]);
   const [currentDate, setCurrentDate] = useState(today);
   const [showNewEvent, setShowNewEvent] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
