@@ -434,9 +434,12 @@ const OnboardingPage = () => {
       }
 
       toast.success("Empresa configurada com sucesso!");
-      navigate("/dashboard");
+      // Forçamos o reload da página para garantir que o contexto de autenticação 
+      // (useAuth) recarregue o profile atualizado com onboarding_completed = true
+      window.location.href = "/dashboard";
     } catch (err: any) {
-      toast.error(err.message || "Erro ao salvar");
+      console.error("Erro no onboarding:", err);
+      toast.error(err.message || "Erro ao salvar os dados da empresa");
     } finally {
       setSaving(false);
     }
