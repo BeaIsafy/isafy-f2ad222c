@@ -557,6 +557,236 @@ export function useCreateTimelineEvent() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["timeline_events"] }),
   });
 }
+// ============================================
+// SINGLE RECORD HOOKS
+// ============================================
+export function usePipelineLeadDetail(id?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["pipeline_lead_detail", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("pipeline_leads")
+        .select("*, contact:contacts(id, name, phone, email), assigned_broker:brokers!pipeline_leads_assigned_broker_id_fkey(id, name, initials), property:properties(id, title, address, neighborhood, city, sale_price, rent_price, bedrooms, bathrooms, parking_spaces, total_area, images, cover_image)")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!company?.id,
+  });
+}
+
+export function usePropertyDetail(id?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["property_detail", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("properties")
+        .select("*, assigned_broker:brokers!properties_assigned_broker_id_fkey(id, name, initials), owner:profiles!properties_owner_id_fkey(id, full_name)")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!company?.id,
+  });
+}
+
+export function useContactDetail(id?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["contact_detail", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("*, broker:brokers(id, name, initials), responsible:profiles!contacts_responsible_id_fkey(id, full_name)")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!company?.id,
+  });
+}
+
+export function useProposalByToken(token?: string) {
+  return useQuery({
+    queryKey: ["proposal_token", token],
+    queryFn: async () => {
+      if (!token) return null;
+      const { data, error } = await supabase
+        .from("proposals")
+        .select("*, property:properties(id, title, address, neighborhood, city, state, total_area, bedrooms, bathrooms, sale_price, rent_price, cover_image), contact:contacts(id, name, phone)")
+        .eq("public_token", token)
+        .single();
+      if (error) throw error;
+      // Also get company info
+      if (data?.company_id) {
+        const { data: companyData } = await supabase.from("companies").select("name, logo_url, primary_color").eq("id", data.company_id).single();
+        return { ...data, company: companyData };
+      }
+      return data;
+    },
+    enabled: !!token,
+  });
+}
+
+export function usePropertyProposals(propertyId?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["property_proposals", propertyId],
+    queryFn: async () => {
+      if (!propertyId) return [];
+      const { data, error } = await supabase
+        .from("proposals")
+        .select("*, contact:contacts(id, name, phone)")
+        .eq("property_id", propertyId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!propertyId && !!company?.id,
+  });
+}
+
+export function usePropertyVisits(propertyId?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["property_visits", propertyId],
+    queryFn: async () => {
+      if (!propertyId) return [];
+      const { data, error } = await supabase
+        .from("visits")
+        .select("*, contact:contacts(id, name, phone), broker:profiles!visits_broker_id_fkey(id, full_name)")
+        .eq("property_id", propertyId)
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!propertyId && !!company?.id,
+  });
+}
+
+export function useCaptacaoChecklist(pipelineLeadId?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["captacao_checklist", pipelineLeadId],
+    queryFn: async () => {
+      if (!pipelineLeadId) return [];
+      const { data, error } = await supabase
+        .from("captacao_checklist")
+        .select("*")
+        .eq("pipeline_lead_id", pipelineLeadId)
+        .order("position");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!pipelineLeadId && !!company?.id,
+  });
+}
+
+export function useUpdateCaptacaoCheckItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, is_checked }: { id: string; is_checked: boolean }) => {
+      const { data, error } = await supabase
+        .from("captacao_checklist")
+        .update({ is_checked, checked_at: is_checked ? new Date().toISOString() : null })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["captacao_checklist"] }),
+  });
+}
+
+export function useContactProposals(contactId?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["contact_proposals", contactId],
+    queryFn: async () => {
+      if (!contactId) return [];
+      const { data, error } = await supabase
+        .from("proposals")
+        .select("*, property:properties(id, title)")
+        .eq("contact_id", contactId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!contactId && !!company?.id,
+  });
+}
+
+export function useContactPropertiesInterest(contactId?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["contact_properties_interest", contactId],
+    queryFn: async () => {
+      if (!contactId) return [];
+      const { data, error } = await supabase
+        .from("contact_properties_interest")
+        .select("*, property:properties(id, title, neighborhood, city, sale_price, rent_price)")
+        .eq("contact_id", contactId);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!contactId && !!company?.id,
+  });
+}
+
+export function useLeadMatchProperties(leadId?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["lead_match_properties", leadId],
+    queryFn: async () => {
+      if (!leadId || !company?.id) return [];
+      // Get the lead to understand criteria
+      const { data: lead } = await supabase
+        .from("pipeline_leads")
+        .select("*")
+        .eq("id", leadId)
+        .single();
+      if (!lead) return [];
+      // Get active properties from the same company
+      let query = supabase
+        .from("properties")
+        .select("*")
+        .eq("company_id", company.id)
+        .eq("status", "ativo")
+        .limit(6);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!leadId && !!company?.id,
+  });
+}
+
+export function useLeadProposals(pipelineLeadId?: string) {
+  const { company } = useAuth();
+  return useQuery({
+    queryKey: ["lead_proposals", pipelineLeadId],
+    queryFn: async () => {
+      if (!pipelineLeadId) return [];
+      const { data, error } = await supabase
+        .from("proposals")
+        .select("*, property:properties(id, title)")
+        .eq("pipeline_lead_id", pipelineLeadId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!pipelineLeadId && !!company?.id,
+  });
+}
 
 // ============================================
 // DASHBOARD STATS
