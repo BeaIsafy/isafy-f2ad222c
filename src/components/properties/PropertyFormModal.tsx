@@ -197,16 +197,16 @@ function StepInfo({ category, setCategory, types, purposes, togglePurpose }: {
         </div>
       </div>
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-        <div><Label className="text-xs">Dormitórios</Label><Input type="number" min="0" className="mt-1" /></div>
-        <div><Label className="text-xs">Suítes</Label><Input type="number" min="0" className="mt-1" /></div>
-        <div><Label className="text-xs">Banheiros</Label><Input type="number" min="0" className="mt-1" /></div>
-        <div><Label className="text-xs">Vagas</Label><Input type="number" min="0" className="mt-1" /></div>
-        <div><Label className="text-xs">Área útil (m²)</Label><Input type="number" min="0" className="mt-1" /></div>
-        <div><Label className="text-xs">Área total (m²)</Label><Input type="number" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Dormitórios</Label><Input inputMode="numeric" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Suítes</Label><Input inputMode="numeric" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Banheiros</Label><Input inputMode="numeric" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Vagas</Label><Input inputMode="numeric" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Área útil (m²)</Label><Input inputMode="decimal" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Área total (m²)</Label><Input inputMode="decimal" min="0" className="mt-1" /></div>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <div><Label className="text-xs">Corretor responsável</Label><Input className="mt-1" placeholder="Nome do corretor" /></div>
-        <div><Label className="text-xs">Ano de construção</Label><Input type="number" className="mt-1" placeholder="Ex: 2020" /></div>
+        <div><Label className="text-xs">Ano de construção</Label><Input inputMode="numeric" className="mt-1" placeholder="Ex: 2020" /></div>
         <div><Label className="text-xs">Matrícula</Label><Input className="mt-1" placeholder="Nº matrícula" /></div>
       </div>
     </div>
@@ -270,19 +270,19 @@ function StepValues({ salePrice, setSalePrice, totalArea, setTotalArea, pricePer
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
-        <div><Label className="text-xs">Valor de Venda (R$)</Label><Input type="number" className="mt-1" placeholder="0" value={salePrice} onChange={e => setSalePrice(e.target.value)} /></div>
-        <div><Label className="text-xs">Valor de Locação (R$/mês)</Label><Input type="number" className="mt-1" placeholder="0" /></div>
-        <div><Label className="text-xs">Valor Temporada (R$/dia)</Label><Input type="number" className="mt-1" placeholder="0" /></div>
+        <div><Label className="text-xs">Valor de Venda (R$)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" value={salePrice} onChange={e => setSalePrice(e.target.value)} /></div>
+        <div><Label className="text-xs">Valor de Locação (R$/mês)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" /></div>
+        <div><Label className="text-xs">Valor Temporada (R$/dia)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" /></div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div><Label className="text-xs">Área Total (m²)</Label><Input type="number" className="mt-1" value={totalArea} onChange={e => setTotalArea(e.target.value)} /></div>
+        <div><Label className="text-xs">Área Total (m²)</Label><Input inputMode="decimal" className="mt-1" value={totalArea} onChange={e => setTotalArea(e.target.value)} /></div>
         <div className="rounded-lg bg-muted p-3">
           <Label className="text-xs text-muted-foreground">Valor por m²</Label>
           <p className="text-lg font-bold text-primary mt-1">{pricePerM2 > 0 ? formatCurrency(pricePerM2) : "—"}</p>
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <div><Label className="text-xs">IPTU (R$)</Label><Input type="number" className="mt-1" placeholder="0" /></div>
+        <div><Label className="text-xs">IPTU (R$)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" /></div>
         <div>
           <Label className="text-xs">Cobrança IPTU</Label>
           <Select><SelectTrigger className="mt-1"><SelectValue placeholder="Selecionar" /></SelectTrigger>
@@ -292,7 +292,7 @@ function StepValues({ salePrice, setSalePrice, totalArea, setTotalArea, pricePer
             </SelectContent>
           </Select>
         </div>
-        <div><Label className="text-xs">Condomínio (R$)</Label><Input type="number" className="mt-1" placeholder="0" /></div>
+        <div><Label className="text-xs">Condomínio (R$)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" /></div>
       </div>
     </div>
   );
@@ -308,11 +308,11 @@ function StepCommission({ commDirect, setCommDirect, commPartner, setCommPartner
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label className="text-xs">% Comissão Venda Direta</Label>
-          <Input type="number" step="0.5" className="mt-1" value={commDirect} onChange={e => setCommDirect(e.target.value)} />
+          <Input inputMode="decimal" step="0.5" className="mt-1" value={commDirect} onChange={e => setCommDirect(e.target.value)} />
         </div>
         <div>
           <Label className="text-xs">% Comissão Parceria</Label>
-          <Input type="number" step="0.5" className="mt-1" value={commPartner} onChange={e => setCommPartner(e.target.value)} />
+          <Input inputMode="decimal" step="0.5" className="mt-1" value={commPartner} onChange={e => setCommPartner(e.target.value)} />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">

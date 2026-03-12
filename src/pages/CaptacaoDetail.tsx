@@ -309,12 +309,12 @@ function EditPropertyModal({ open, onClose, data, onSave }: { open: boolean; onC
             <div><Label>Cidade</Label><Input className="mt-1" value={form.city} onChange={e => set("city", e.target.value)} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Área (m²)</Label><Input type="number" className="mt-1" value={form.area} onChange={e => set("area", Number(e.target.value))} /></div>
-            <div><Label>Quartos</Label><Input type="number" className="mt-1" value={form.bedrooms} onChange={e => set("bedrooms", Number(e.target.value))} /></div>
+            <div><Label>Área (m²)</Label><Input inputMode="decimal" className="mt-1" value={form.area} onChange={e => set("area", Number(e.target.value))} /></div>
+            <div><Label>Quartos</Label><Input inputMode="numeric" className="mt-1" value={form.bedrooms} onChange={e => set("bedrooms", Number(e.target.value))} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Banheiros</Label><Input type="number" className="mt-1" value={form.bathrooms} onChange={e => set("bathrooms", Number(e.target.value))} /></div>
-            <div><Label>Vagas</Label><Input type="number" className="mt-1" value={form.parkingSpots} onChange={e => set("parkingSpots", Number(e.target.value))} /></div>
+            <div><Label>Banheiros</Label><Input inputMode="numeric" className="mt-1" value={form.bathrooms} onChange={e => set("bathrooms", Number(e.target.value))} /></div>
+            <div><Label>Vagas</Label><Input inputMode="numeric" className="mt-1" value={form.parkingSpots} onChange={e => set("parkingSpots", Number(e.target.value))} /></div>
           </div>
           <div><Label>Estado</Label><Input className="mt-1" value={form.propertyCondition} onChange={e => set("propertyCondition", e.target.value)} /></div>
         </div>
@@ -336,8 +336,8 @@ function EditValuationModal({ open, onClose, data, onSave }: { open: boolean; on
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Editar Avaliação & Preço</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Preço Pedido pelo Proprietário</Label><Input type="number" className="mt-1" value={form.ownerAskingPrice} onChange={e => set("ownerAskingPrice", Number(e.target.value))} /></div>
-          <div><Label>Preço Sugerido</Label><Input type="number" className="mt-1" value={form.suggestedPrice} onChange={e => set("suggestedPrice", Number(e.target.value))} /></div>
+          <div><Label>Preço Pedido pelo Proprietário</Label><Input inputMode="numeric" className="mt-1" value={form.ownerAskingPrice} onChange={e => set("ownerAskingPrice", Number(e.target.value))} /></div>
+          <div><Label>Preço Sugerido</Label><Input inputMode="numeric" className="mt-1" value={form.suggestedPrice} onChange={e => set("suggestedPrice", Number(e.target.value))} /></div>
           <div><Label>Data da Avaliação</Label><Input className="mt-1" value={form.evaluationDate} onChange={e => set("evaluationDate", e.target.value)} /></div>
         </div>
         <DialogFooter>
@@ -360,8 +360,8 @@ function EditCommissionModal({ open, onClose, data, onSave }: { open: boolean; o
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Editar Comissão</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Comissão Direta (%)</Label><Input type="number" step="0.5" className="mt-1" value={form.commissionDirect} onChange={e => set("commissionDirect", Number(e.target.value))} /></div>
-          <div><Label>Comissão Parceria (%)</Label><Input type="number" step="0.5" className="mt-1" value={form.commissionPartner} onChange={e => set("commissionPartner", Number(e.target.value))} /></div>
+          <div><Label>Comissão Direta (%)</Label><Input inputMode="decimal" step="0.5" className="mt-1" value={form.commissionDirect} onChange={e => set("commissionDirect", Number(e.target.value))} /></div>
+          <div><Label>Comissão Parceria (%)</Label><Input inputMode="decimal" step="0.5" className="mt-1" value={form.commissionPartner} onChange={e => set("commissionPartner", Number(e.target.value))} /></div>
           <div className="rounded-lg bg-muted p-3 text-center">
             <p className="text-lg font-bold text-primary">{formatCurrency(estimated)}</p>
             <p className="text-xs text-muted-foreground">Comissão estimada</p>

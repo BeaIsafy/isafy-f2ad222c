@@ -340,7 +340,7 @@ const ProfilePage = () => {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">Telefone</label>
-                      <Input value={phone} onChange={e => setPhone(e.target.value)} className="mt-1" />
+                      <Input inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} className="mt-1" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">CRECI</label>

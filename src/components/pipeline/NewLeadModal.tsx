@@ -30,7 +30,7 @@ export function NewLeadModal({ open, onClose, onConfirm }: NewLeadModalProps) {
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label>Telefone</Label>
-              <Input placeholder="(11) 99999-0000" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+              <Input inputMode="tel" placeholder="(11) 99999-0000" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
             </div>
             <div className="grid gap-2">
               <Label>E-mail</Label>
@@ -51,11 +51,11 @@ export function NewLeadModal({ open, onClose, onConfirm }: NewLeadModalProps) {
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label>Preço Mínimo</Label>
-              <Input type="number" placeholder="R$ 0" value={form.minPrice} onChange={(e) => set("minPrice", e.target.value)} />
+              <Input inputMode="numeric" placeholder="R$ 0" value={form.minPrice} onChange={(e) => set("minPrice", e.target.value)} />
             </div>
             <div className="grid gap-2">
               <Label>Preço Máximo</Label>
-              <Input type="number" placeholder="R$ 0" value={form.maxPrice} onChange={(e) => set("maxPrice", e.target.value)} />
+              <Input inputMode="numeric" placeholder="R$ 0" value={form.maxPrice} onChange={(e) => set("maxPrice", e.target.value)} />
             </div>
           </div>
           <div className="grid gap-2">

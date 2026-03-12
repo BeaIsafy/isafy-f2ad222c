@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger } from
 "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Popover,
   PopoverContent,
@@ -33,10 +34,16 @@ const mockNotifications = [
 export function GlobalHeader() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { profile, signOut } = useAuth();
   const [notifications] = useState(mockNotifications);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const userName = "Carlos";
+  const userName = profile?.full_name?.split(" ")[0] || "Usuário";
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <header className="flex items-center justify-between mb-2 px-[5px] py-[4px] pb-[4px] border-b border-border/50">
@@ -128,7 +135,7 @@ export function GlobalHeader() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => navigate("/")}
+              onClick={handleLogout}
               className="cursor-pointer text-destructive focus:text-destructive">
               
               <LogOut size={14} className="mr-2" /> Sair

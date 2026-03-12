@@ -54,7 +54,7 @@ export function CreateProposalModal({ open, onClose, leadName }: CreateProposalM
             </div>
             <div className="space-y-2">
               <Label>Valor da Proposta (R$) *</Label>
-              <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder="500000" />
+              <Input inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} placeholder="500000" />
             </div>
             <div className="space-y-2">
               <Label>Forma de Pagamento</Label>
@@ -68,17 +68,17 @@ export function CreateProposalModal({ open, onClose, leadName }: CreateProposalM
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Entrada (R$)</Label>
-                  <Input type="number" value={downPayment} onChange={(e) => setDownPayment(e.target.value)} placeholder="100000" />
+                  <Input inputMode="numeric" value={downPayment} onChange={(e) => setDownPayment(e.target.value)} placeholder="100000" />
                 </div>
                 <div className="space-y-2">
                   <Label>Parcelas</Label>
-                  <Input type="number" value={installments} onChange={(e) => setInstallments(e.target.value)} placeholder="360" />
+                  <Input inputMode="numeric" value={installments} onChange={(e) => setInstallments(e.target.value)} placeholder="360" />
                 </div>
               </div>
             )}
             <div className="space-y-2">
               <Label>Validade (dias)</Label>
-              <Input type="number" value={validity} onChange={(e) => setValidity(e.target.value)} />
+              <Input inputMode="numeric" value={validity} onChange={(e) => setValidity(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Condições / Observações</Label>

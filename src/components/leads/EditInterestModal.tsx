@@ -77,15 +77,15 @@ export function EditInterestModal({ open, onClose, data, onSave }: EditInterestM
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>Preço Mín.</Label><Input type="number" value={form.minPrice} onChange={(e) => setForm({ ...form, minPrice: Number(e.target.value) })} /></div>
-              <div className="space-y-2"><Label>Preço Máx.</Label><Input type="number" value={form.maxPrice} onChange={(e) => setForm({ ...form, maxPrice: Number(e.target.value) })} /></div>
+              <div className="space-y-2"><Label>Preço Mín.</Label><Input inputMode="numeric" value={form.minPrice} onChange={(e) => setForm({ ...form, minPrice: Number(e.target.value) })} /></div>
+              <div className="space-y-2"><Label>Preço Máx.</Label><Input inputMode="numeric" value={form.maxPrice} onChange={(e) => setForm({ ...form, maxPrice: Number(e.target.value) })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2"><Label>Quartos</Label><Input type="number" value={form.bedrooms} onChange={(e) => setForm({ ...form, bedrooms: Number(e.target.value) })} /></div>
-              <div className="space-y-2"><Label>Banheiros</Label><Input type="number" value={form.bathrooms} onChange={(e) => setForm({ ...form, bathrooms: Number(e.target.value) })} /></div>
-              <div className="space-y-2"><Label>Vagas</Label><Input type="number" value={form.parkingSpots} onChange={(e) => setForm({ ...form, parkingSpots: Number(e.target.value) })} /></div>
+              <div className="space-y-2"><Label>Quartos</Label><Input inputMode="numeric" value={form.bedrooms} onChange={(e) => setForm({ ...form, bedrooms: Number(e.target.value) })} /></div>
+              <div className="space-y-2"><Label>Banheiros</Label><Input inputMode="numeric" value={form.bathrooms} onChange={(e) => setForm({ ...form, bathrooms: Number(e.target.value) })} /></div>
+              <div className="space-y-2"><Label>Vagas</Label><Input inputMode="numeric" value={form.parkingSpots} onChange={(e) => setForm({ ...form, parkingSpots: Number(e.target.value) })} /></div>
             </div>
-            <div className="space-y-2"><Label>Área mín. (m²)</Label><Input type="number" value={form.minArea} onChange={(e) => setForm({ ...form, minArea: Number(e.target.value) })} /></div>
+            <div className="space-y-2"><Label>Área mín. (m²)</Label><Input inputMode="decimal" value={form.minArea} onChange={(e) => setForm({ ...form, minArea: Number(e.target.value) })} /></div>
             <div className="space-y-2">
               <Label>Bairros</Label>
               <div className="flex flex-wrap gap-1 mb-2">
