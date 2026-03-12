@@ -336,8 +336,8 @@ function EditValuationModal({ open, onClose, data, onSave }: { open: boolean; on
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Editar Avaliação & Preço</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Preço Pedido pelo Proprietário</Label><Input type="number" className="mt-1" value={form.ownerAskingPrice} onChange={e => set("ownerAskingPrice", Number(e.target.value))} /></div>
-          <div><Label>Preço Sugerido</Label><Input type="number" className="mt-1" value={form.suggestedPrice} onChange={e => set("suggestedPrice", Number(e.target.value))} /></div>
+          <div><Label>Preço Pedido pelo Proprietário</Label><Input inputMode="numeric" className="mt-1" value={form.ownerAskingPrice} onChange={e => set("ownerAskingPrice", Number(e.target.value))} /></div>
+          <div><Label>Preço Sugerido</Label><Input inputMode="numeric" className="mt-1" value={form.suggestedPrice} onChange={e => set("suggestedPrice", Number(e.target.value))} /></div>
           <div><Label>Data da Avaliação</Label><Input className="mt-1" value={form.evaluationDate} onChange={e => set("evaluationDate", e.target.value)} /></div>
         </div>
         <DialogFooter>
