@@ -34,10 +34,16 @@ const mockNotifications = [
 export function GlobalHeader() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { profile, signOut } = useAuth();
   const [notifications] = useState(mockNotifications);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const userName = "Carlos";
+  const userName = profile?.full_name?.split(" ")[0] || "Usuário";
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <header className="flex items-center justify-between mb-2 px-[5px] py-[4px] pb-[4px] border-b border-border/50">
