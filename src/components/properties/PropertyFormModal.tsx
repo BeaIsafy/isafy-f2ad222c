@@ -206,7 +206,7 @@ function StepInfo({ category, setCategory, types, purposes, togglePurpose }: {
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <div><Label className="text-xs">Corretor responsável</Label><Input className="mt-1" placeholder="Nome do corretor" /></div>
-        <div><Label className="text-xs">Ano de construção</Label><Input type="number" className="mt-1" placeholder="Ex: 2020" /></div>
+        <div><Label className="text-xs">Ano de construção</Label><Input inputMode="numeric" className="mt-1" placeholder="Ex: 2020" /></div>
         <div><Label className="text-xs">Matrícula</Label><Input className="mt-1" placeholder="Nº matrícula" /></div>
       </div>
     </div>
