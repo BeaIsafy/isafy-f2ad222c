@@ -289,7 +289,7 @@ const Contacts = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Telefone *</Label>
-                <Input value={newContact.phone} onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })} placeholder="(11) 99999-9999" />
+                <Input inputMode="tel" value={newContact.phone} onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })} placeholder="(11) 99999-9999" />
               </div>
               <div className="space-y-1.5">
                 <Label>E-mail</Label>
