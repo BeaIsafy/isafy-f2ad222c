@@ -90,7 +90,78 @@ function MetricsGrid({ stats }: { stats: any }) {
   );
 }
 
-function MonthlyGoalCard() {
+function MonthlyGoalCard({ brokerId }: { brokerId?: string }) {
+  const { company, user } = useAuth();
+  const { data: goalData } = useCurrentMonthGoal(brokerId);
+  const upsertGoal = useUpsertBrokerGoal();
+  const [showCreate, setShowCreate] = useState(false);
+  const [goalInput, setGoalInput] = useState("100000");
+
+  const target = goalData?.target_value ?? 0;
+  const achieved = goalData?.achieved_value ?? 0;
+  const pct = target > 0 ? Math.round((achieved / target) * 100) : 0;
+  const fmtBRL = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+  const handleCreateGoal = () => {
+    if (!brokerId) return;
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    const monthStr = currentMonth.toISOString().split("T")[0];
+    upsertGoal.mutate({
+      broker_id: brokerId,
+      month: monthStr,
+      target_value: Number(goalInput),
+    });
+    setShowCreate(false);
+    toast.success("Meta cadastrada!");
+  };
+
+  if (!goalData && !showCreate) {
+    return (
+      <Card className="shadow-card border-border/50 h-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Target size={18} className="text-primary" /> Meta Mensal
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center space-y-4 py-8">
+          <p className="text-sm text-muted-foreground text-center">Nenhuma meta cadastrada para este mês.</p>
+          <Button variant="outline" className="gap-2" onClick={() => setShowCreate(true)}>
+            <Target size={16} /> Cadastrar Meta
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (showCreate) {
+    return (
+      <Card className="shadow-card border-border/50 h-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Target size={18} className="text-primary" /> Nova Meta Mensal
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-sm">Valor da Meta (R$)</Label>
+            <Input
+              inputMode="numeric"
+              value={goalInput}
+              onChange={(e) => setGoalInput(e.target.value.replace(/\D/g, ""))}
+              className="mt-1"
+              placeholder="100000"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowCreate(false)}>Cancelar</Button>
+            <Button className="flex-1 gradient-primary text-primary-foreground" onClick={handleCreateGoal} disabled={!goalInput || !brokerId}>Salvar</Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="shadow-card border-border/50 h-full">
       <CardHeader className="pb-3">
@@ -100,19 +171,19 @@ function MonthlyGoalCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-center">
-          <p className="text-3xl font-extrabold text-gradient">R$ 1.8M</p>
-          <p className="text-sm text-muted-foreground">de R$ 3.0M</p>
+          <p className="text-3xl font-extrabold text-gradient">{fmtBRL(achieved)}</p>
+          <p className="text-sm text-muted-foreground">de {fmtBRL(target)}</p>
         </div>
-        <Progress value={60} className="h-3" />
-        <p className="text-center text-sm text-muted-foreground">60% da meta atingida</p>
+        <Progress value={Math.min(pct, 100)} className="h-3" />
+        <p className="text-center text-sm text-muted-foreground">{pct}% da meta atingida</p>
         <div className="grid grid-cols-2 gap-3 pt-2">
           <div className="rounded-lg bg-muted p-3 text-center">
-            <p className="text-lg font-bold text-foreground">12</p>
+            <p className="text-lg font-bold text-foreground">{goalData?.sales_count ?? 0}</p>
             <p className="text-xs text-muted-foreground">Vendas</p>
           </div>
           <div className="rounded-lg bg-muted p-3 text-center">
-            <p className="text-lg font-bold text-foreground">R$ 95K</p>
-            <p className="text-xs text-muted-foreground">Comissões</p>
+            <p className="text-lg font-bold text-foreground">{goalData?.leads_count ?? 0}</p>
+            <p className="text-xs text-muted-foreground">Leads</p>
           </div>
         </div>
       </CardContent>
