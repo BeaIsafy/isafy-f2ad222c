@@ -292,7 +292,7 @@ function StepValues({ salePrice, setSalePrice, totalArea, setTotalArea, pricePer
             </SelectContent>
           </Select>
         </div>
-        <div><Label className="text-xs">Condomínio (R$)</Label><Input type="number" className="mt-1" placeholder="0" /></div>
+        <div><Label className="text-xs">Condomínio (R$)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" /></div>
       </div>
     </div>
   );
