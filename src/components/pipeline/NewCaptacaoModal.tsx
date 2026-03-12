@@ -30,7 +30,7 @@ export function NewCaptacaoModal({ open, onClose, onConfirm }: NewCaptacaoModalP
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label>Telefone</Label>
-              <Input placeholder="(11) 99999-0000" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+              <Input inputMode="tel" placeholder="(11) 99999-0000" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
             </div>
             <div className="grid gap-2">
               <Label>E-mail</Label>
