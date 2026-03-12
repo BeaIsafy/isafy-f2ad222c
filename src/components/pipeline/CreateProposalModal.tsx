@@ -54,7 +54,7 @@ export function CreateProposalModal({ open, onClose, leadName }: CreateProposalM
             </div>
             <div className="space-y-2">
               <Label>Valor da Proposta (R$) *</Label>
-              <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder="500000" />
+              <Input inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} placeholder="500000" />
             </div>
             <div className="space-y-2">
               <Label>Forma de Pagamento</Label>
