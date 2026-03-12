@@ -309,12 +309,12 @@ function EditPropertyModal({ open, onClose, data, onSave }: { open: boolean; onC
             <div><Label>Cidade</Label><Input className="mt-1" value={form.city} onChange={e => set("city", e.target.value)} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Área (m²)</Label><Input type="number" className="mt-1" value={form.area} onChange={e => set("area", Number(e.target.value))} /></div>
-            <div><Label>Quartos</Label><Input type="number" className="mt-1" value={form.bedrooms} onChange={e => set("bedrooms", Number(e.target.value))} /></div>
+            <div><Label>Área (m²)</Label><Input inputMode="decimal" className="mt-1" value={form.area} onChange={e => set("area", Number(e.target.value))} /></div>
+            <div><Label>Quartos</Label><Input inputMode="numeric" className="mt-1" value={form.bedrooms} onChange={e => set("bedrooms", Number(e.target.value))} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Banheiros</Label><Input type="number" className="mt-1" value={form.bathrooms} onChange={e => set("bathrooms", Number(e.target.value))} /></div>
-            <div><Label>Vagas</Label><Input type="number" className="mt-1" value={form.parkingSpots} onChange={e => set("parkingSpots", Number(e.target.value))} /></div>
+            <div><Label>Banheiros</Label><Input inputMode="numeric" className="mt-1" value={form.bathrooms} onChange={e => set("bathrooms", Number(e.target.value))} /></div>
+            <div><Label>Vagas</Label><Input inputMode="numeric" className="mt-1" value={form.parkingSpots} onChange={e => set("parkingSpots", Number(e.target.value))} /></div>
           </div>
           <div><Label>Estado</Label><Input className="mt-1" value={form.propertyCondition} onChange={e => set("propertyCondition", e.target.value)} /></div>
         </div>
