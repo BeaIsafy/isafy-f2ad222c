@@ -197,12 +197,12 @@ function StepInfo({ category, setCategory, types, purposes, togglePurpose }: {
         </div>
       </div>
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-        <div><Label className="text-xs">Dormitórios</Label><Input type="number" min="0" className="mt-1" /></div>
-        <div><Label className="text-xs">Suítes</Label><Input type="number" min="0" className="mt-1" /></div>
-        <div><Label className="text-xs">Banheiros</Label><Input type="number" min="0" className="mt-1" /></div>
-        <div><Label className="text-xs">Vagas</Label><Input type="number" min="0" className="mt-1" /></div>
-        <div><Label className="text-xs">Área útil (m²)</Label><Input type="number" min="0" className="mt-1" /></div>
-        <div><Label className="text-xs">Área total (m²)</Label><Input type="number" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Dormitórios</Label><Input inputMode="numeric" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Suítes</Label><Input inputMode="numeric" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Banheiros</Label><Input inputMode="numeric" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Vagas</Label><Input inputMode="numeric" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Área útil (m²)</Label><Input inputMode="decimal" min="0" className="mt-1" /></div>
+        <div><Label className="text-xs">Área total (m²)</Label><Input inputMode="decimal" min="0" className="mt-1" /></div>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <div><Label className="text-xs">Corretor responsável</Label><Input className="mt-1" placeholder="Nome do corretor" /></div>
