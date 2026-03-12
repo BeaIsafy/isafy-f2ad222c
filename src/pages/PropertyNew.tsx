@@ -289,9 +289,9 @@ function StepValues({ salePrice, setSalePrice, totalArea, setTotalArea, pricePer
   return (
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-3">
-        <div><Label className="text-xs">Valor de Venda (R$)</Label><Input type="number" className="mt-1" placeholder="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} /></div>
-        <div><Label className="text-xs">Valor de Locação (R$/mês)</Label><Input type="number" className="mt-1" placeholder="0" /></div>
-        <div><Label className="text-xs">Valor Temporada (R$/dia)</Label><Input type="number" className="mt-1" placeholder="0" /></div>
+        <div><Label className="text-xs">Valor de Venda (R$)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} /></div>
+        <div><Label className="text-xs">Valor de Locação (R$/mês)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" /></div>
+        <div><Label className="text-xs">Valor Temporada (R$/dia)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" /></div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div><Label className="text-xs">Área Total (m²)</Label><Input type="number" className="mt-1" value={totalArea} onChange={(e) => setTotalArea(e.target.value)} /></div>
