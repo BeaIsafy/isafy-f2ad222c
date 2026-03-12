@@ -351,10 +351,13 @@ function TaskDetailDialog({
 const Dashboard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const { data: stats } = useDashboardStats();
   const { data: leads = [] } = usePipelineLeads("atendimento" as any);
   const { data: dbTasks = [] } = useTasks();
   const updateTask = useUpdateTask();
+  const { data: brokers = [] } = useBrokers();
+  const myBroker = brokers.find((b: any) => b.profile_id === user?.id);
 
   const tasks: TaskItem[] = (dbTasks as any[]).map((t) => ({
     id: t.id,
