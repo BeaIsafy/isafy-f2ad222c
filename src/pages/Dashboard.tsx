@@ -414,7 +414,7 @@ const Dashboard = () => {
           <MetricsGrid stats={stats} />
           <div className="grid gap-6 lg:grid-cols-3">
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-              <MonthlyGoalCard />
+              <MonthlyGoalCard brokerId={myBroker?.id} />
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
               <NewLeadsCard navigate={navigate} leads={leads as any[]} />

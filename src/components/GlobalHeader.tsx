@@ -135,7 +135,7 @@ export function GlobalHeader() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => navigate("/")}
+              onClick={handleLogout}
               className="cursor-pointer text-destructive focus:text-destructive">
               
               <LogOut size={14} className="mr-2" /> Sair

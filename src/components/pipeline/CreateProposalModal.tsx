@@ -78,7 +78,7 @@ export function CreateProposalModal({ open, onClose, leadName }: CreateProposalM
             )}
             <div className="space-y-2">
               <Label>Validade (dias)</Label>
-              <Input type="number" value={validity} onChange={(e) => setValidity(e.target.value)} />
+              <Input inputMode="numeric" value={validity} onChange={(e) => setValidity(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Condições / Observações</Label>
