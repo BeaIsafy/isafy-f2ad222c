@@ -68,11 +68,11 @@ export function CreateProposalModal({ open, onClose, leadName }: CreateProposalM
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Entrada (R$)</Label>
-                  <Input type="number" value={downPayment} onChange={(e) => setDownPayment(e.target.value)} placeholder="100000" />
+                  <Input inputMode="numeric" value={downPayment} onChange={(e) => setDownPayment(e.target.value)} placeholder="100000" />
                 </div>
                 <div className="space-y-2">
                   <Label>Parcelas</Label>
-                  <Input type="number" value={installments} onChange={(e) => setInstallments(e.target.value)} placeholder="360" />
+                  <Input inputMode="numeric" value={installments} onChange={(e) => setInstallments(e.target.value)} placeholder="360" />
                 </div>
               </div>
             )}
