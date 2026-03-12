@@ -294,7 +294,7 @@ function StepValues({ salePrice, setSalePrice, totalArea, setTotalArea, pricePer
         <div><Label className="text-xs">Valor Temporada (R$/dia)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" /></div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div><Label className="text-xs">Área Total (m²)</Label><Input type="number" className="mt-1" value={totalArea} onChange={(e) => setTotalArea(e.target.value)} /></div>
+        <div><Label className="text-xs">Área Total (m²)</Label><Input inputMode="decimal" className="mt-1" value={totalArea} onChange={(e) => setTotalArea(e.target.value)} /></div>
         <div className="rounded-lg bg-muted p-4">
           <Label className="text-xs text-muted-foreground">Valor por m²</Label>
           <p className="text-xl font-bold text-primary mt-1">{pricePerM2 > 0 ? formatCurrency(pricePerM2) : "—"}</p>
