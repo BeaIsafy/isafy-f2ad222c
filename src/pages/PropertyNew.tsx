@@ -252,7 +252,7 @@ function StepAddress() {
   return (
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-3">
-        <div><Label className="text-xs">CEP</Label><Input className="mt-1" placeholder="00000-000" /></div>
+        <div><Label className="text-xs">CEP</Label><Input inputMode="numeric" className="mt-1" placeholder="00000-000" /></div>
         <div className="sm:col-span-2"><Label className="text-xs">Logradouro</Label><Input className="mt-1" placeholder="Rua, Avenida..." /></div>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
