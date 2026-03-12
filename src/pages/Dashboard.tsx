@@ -29,7 +29,10 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { QuickCreateFAB } from "@/components/dashboard/QuickCreateFAB";
-import { useDashboardStats, usePipelineLeads, useTasks, useUpdateTask } from "@/hooks/useSupabaseData";
+import { useDashboardStats, usePipelineLeads, useTasks, useUpdateTask, useBrokers, useCurrentMonthGoal, useUpsertBrokerGoal } from "@/hooks/useSupabaseData";
+import { useAuth } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const tempColors: Record<string, string> = {
   hot: "bg-hot text-primary-foreground",
