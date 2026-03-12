@@ -301,7 +301,7 @@ function StepValues({ salePrice, setSalePrice, totalArea, setTotalArea, pricePer
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <div><Label className="text-xs">IPTU (R$)</Label><Input type="number" className="mt-1" placeholder="0" /></div>
+        <div><Label className="text-xs">IPTU (R$)</Label><Input inputMode="numeric" className="mt-1" placeholder="0" /></div>
         <div>
           <Label className="text-xs">Cobrança IPTU</Label>
           <Select><SelectTrigger className="mt-1"><SelectValue placeholder="Selecionar" /></SelectTrigger>
