@@ -327,11 +327,11 @@ function StepCommission({ commDirect, setCommDirect, commPartner, setCommPartner
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label className="text-xs">% Comissão Venda Direta</Label>
-          <Input type="number" step="0.5" className="mt-1" value={commDirect} onChange={(e) => setCommDirect(e.target.value)} />
+          <Input inputMode="decimal" step="0.5" className="mt-1" value={commDirect} onChange={(e) => setCommDirect(e.target.value)} />
         </div>
         <div>
           <Label className="text-xs">% Comissão Parceria</Label>
-          <Input type="number" step="0.5" className="mt-1" value={commPartner} onChange={(e) => setCommPartner(e.target.value)} />
+          <Input inputMode="decimal" step="0.5" className="mt-1" value={commPartner} onChange={(e) => setCommPartner(e.target.value)} />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">

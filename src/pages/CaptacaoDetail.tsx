@@ -360,8 +360,8 @@ function EditCommissionModal({ open, onClose, data, onSave }: { open: boolean; o
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Editar Comissão</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Comissão Direta (%)</Label><Input type="number" step="0.5" className="mt-1" value={form.commissionDirect} onChange={e => set("commissionDirect", Number(e.target.value))} /></div>
-          <div><Label>Comissão Parceria (%)</Label><Input type="number" step="0.5" className="mt-1" value={form.commissionPartner} onChange={e => set("commissionPartner", Number(e.target.value))} /></div>
+          <div><Label>Comissão Direta (%)</Label><Input inputMode="decimal" step="0.5" className="mt-1" value={form.commissionDirect} onChange={e => set("commissionDirect", Number(e.target.value))} /></div>
+          <div><Label>Comissão Parceria (%)</Label><Input inputMode="decimal" step="0.5" className="mt-1" value={form.commissionPartner} onChange={e => set("commissionPartner", Number(e.target.value))} /></div>
           <div className="rounded-lg bg-muted p-3 text-center">
             <p className="text-lg font-bold text-primary">{formatCurrency(estimated)}</p>
             <p className="text-xs text-muted-foreground">Comissão estimada</p>
