@@ -141,6 +141,42 @@ export type Database = {
           },
         ]
       }
+      calendar_event_participants: {
+        Row: {
+          broker_id: string
+          created_at: string | null
+          event_id: string
+          id: string
+        }
+        Insert: {
+          broker_id: string
+          created_at?: string | null
+          event_id: string
+          id?: string
+        }
+        Update: {
+          broker_id?: string
+          created_at?: string | null
+          event_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_participants_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
           address: string | null
