@@ -11,20 +11,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useCreateCalendarEvent, useBrokers } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NewEventModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-type EventType = "visit" | "task";
+type EventType = "visit" | "task" | "meeting";
 
 export function NewEventModal({ open, onClose }: NewEventModalProps) {
   const isMobile = useIsMobile();
+  const createEvent = useCreateCalendarEvent();
+  const { data: brokers = [] } = useBrokers();
+
   const [type, setType] = useState<EventType>("visit");
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
@@ -34,6 +40,8 @@ export function NewEventModal({ open, onClose }: NewEventModalProps) {
   const [contact, setContact] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedBrokers, setSelectedBrokers] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const reset = () => {
     setType("visit");
@@ -45,13 +53,56 @@ export function NewEventModal({ open, onClose }: NewEventModalProps) {
     setContact("");
     setAddress("");
     setNotes("");
+    setSelectedBrokers([]);
   };
 
-  const handleSubmit = () => {
+  const toggleBroker = (brokerId: string) => {
+    setSelectedBrokers((prev) =>
+      prev.includes(brokerId) ? prev.filter((id) => id !== brokerId) : [...prev, brokerId]
+    );
+  };
+
+  const handleSubmit = async () => {
     if (!title || !date || !time) return;
-    toast.success(`${type === "visit" ? "Visita" : "Tarefa"} criada com sucesso!`);
-    reset();
-    onClose();
+    setSaving(true);
+    try {
+      const startHour = parseInt(time.split(":")[0], 10);
+      const endHour = endTime ? parseInt(endTime.split(":")[0], 10) : startHour + 1;
+
+      const event = await createEvent.mutateAsync({
+        title,
+        date,
+        start_hour: startHour,
+        end_hour: endHour,
+        type,
+        pipeline: pipeline as any,
+        contact: contact || undefined,
+        address: address || undefined,
+        notes: notes || undefined,
+      });
+
+      // Save participants for meetings
+      if (type === "meeting" && selectedBrokers.length > 0 && event?.id) {
+        const rows = selectedBrokers.map((broker_id) => ({
+          event_id: event.id,
+          broker_id,
+        }));
+        await supabase.from("calendar_event_participants" as any).insert(rows);
+      }
+
+      const labels: Record<EventType, string> = {
+        visit: "Visita",
+        task: "Tarefa",
+        meeting: "Reunião",
+      };
+      toast.success(`${labels[type]} criada com sucesso!`);
+      reset();
+      onClose();
+    } catch (err: any) {
+      toast.error("Erro ao criar evento: " + (err?.message || "Erro desconhecido"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const formContent = (
@@ -59,25 +110,23 @@ export function NewEventModal({ open, onClose }: NewEventModalProps) {
       {/* Type toggle */}
       <div className="space-y-2">
         <Label>Tipo de Evento *</Label>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant={type === "visit" ? "default" : "outline"}
-            onClick={() => setType("visit")}
-            className={type === "visit" ? "gradient-primary text-primary-foreground" : ""}
-          >
-            Visita
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={type === "task" ? "default" : "outline"}
-            onClick={() => setType("task")}
-            className={type === "task" ? "gradient-primary text-primary-foreground" : ""}
-          >
-            Tarefa
-          </Button>
+        <div className="flex gap-2 flex-wrap">
+          {([
+            { value: "visit" as const, label: "Visita" },
+            { value: "task" as const, label: "Tarefa" },
+            { value: "meeting" as const, label: "Reunião" },
+          ]).map((opt) => (
+            <Button
+              key={opt.value}
+              type="button"
+              size="sm"
+              variant={type === opt.value ? "default" : "outline"}
+              onClick={() => setType(opt.value)}
+              className={type === opt.value ? "gradient-primary text-primary-foreground" : ""}
+            >
+              {opt.label}
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -87,7 +136,11 @@ export function NewEventModal({ open, onClose }: NewEventModalProps) {
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder={type === "visit" ? "Ex: Visita Apt. Vila Mariana" : "Ex: Follow-up com cliente"}
+          placeholder={
+            type === "visit" ? "Ex: Visita Apt. Vila Mariana" :
+            type === "meeting" ? "Ex: Reunião de equipe" :
+            "Ex: Follow-up com cliente"
+          }
         />
       </div>
 
@@ -135,6 +188,29 @@ export function NewEventModal({ open, onClose }: NewEventModalProps) {
         </div>
       )}
 
+      {/* Meeting-specific: invite members */}
+      {type === "meeting" && (
+        <div className="space-y-2">
+          <Label>Convidar Membros</Label>
+          {brokers.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Nenhum membro cadastrado.</p>
+          ) : (
+            <div className="max-h-36 overflow-y-auto rounded-md border border-input p-2 space-y-2">
+              {brokers.map((b: any) => (
+                <label key={b.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={selectedBrokers.includes(b.id)}
+                    onCheckedChange={() => toggleBroker(b.id)}
+                  />
+                  <span className="text-foreground">{b.name}</span>
+                  {b.email && <span className="text-muted-foreground text-xs">({b.email})</span>}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Notes */}
       <div className="space-y-2">
         <Label>Observações</Label>
@@ -145,9 +221,9 @@ export function NewEventModal({ open, onClose }: NewEventModalProps) {
 
   const footerButtons = (
     <div className="flex flex-col gap-2 sm:flex-row sm:justify-end w-full">
-      <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancelar</Button>
-      <Button className="gradient-primary text-primary-foreground w-full sm:w-auto" onClick={handleSubmit} disabled={!title || !date || !time}>
-        Criar Evento
+      <Button variant="outline" onClick={onClose} className="w-full sm:w-auto" disabled={saving}>Cancelar</Button>
+      <Button className="gradient-primary text-primary-foreground w-full sm:w-auto" onClick={handleSubmit} disabled={!title || !date || !time || saving}>
+        {saving ? "Salvando..." : "Criar Evento"}
       </Button>
     </div>
   );
