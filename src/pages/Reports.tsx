@@ -1,65 +1,32 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart3, Download, TrendingUp, Users, Target, Clock, MessageSquare,
-  Sparkles, ChevronDown, Calendar, Loader2, FileText,
+  Sparkles, ChevronDown, Calendar, Loader2, FileText, Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, subDays, subMonths, startOfDay, startOfWeek, startOfMonth, startOfQuarter, isAfter, isBefore, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend,
 } from "recharts";
-
-// ── Mock Data ──────────────────────────────────────────────
-const monthlyData = [
-  { name: "Jan", vendas: 4, leads: 32, atendimentos: 48, vgv: 1200000 },
-  { name: "Fev", vendas: 6, leads: 45, atendimentos: 55, vgv: 1800000 },
-  { name: "Mar", vendas: 3, leads: 28, atendimentos: 40, vgv: 950000 },
-  { name: "Abr", vendas: 8, leads: 52, atendimentos: 62, vgv: 2400000 },
-  { name: "Mai", vendas: 5, leads: 38, atendimentos: 50, vgv: 1500000 },
-  { name: "Jun", vendas: 7, leads: 48, atendimentos: 58, vgv: 2100000 },
-  { name: "Jul", vendas: 9, leads: 55, atendimentos: 70, vgv: 2850000 },
-];
-
-const conversionFunnel = [
-  { name: "Leads", value: 320 },
-  { name: "Qualificados", value: 180 },
-  { name: "Visitas", value: 95 },
-  { name: "Propostas", value: 42 },
-  { name: "Vendas", value: 18 },
-];
-
-const teamPerformance = [
-  { name: "Carlos Mendes", leads: 45, vendas: 8, conversao: 17.8, tempoResposta: "12min", tempoVenda: "32 dias" },
-  { name: "Ana Costa", leads: 38, vendas: 6, conversao: 15.8, tempoResposta: "8min", tempoVenda: "28 dias" },
-  { name: "Fernanda Lima", leads: 52, vendas: 10, conversao: 19.2, tempoResposta: "15min", tempoVenda: "35 dias" },
-  { name: "Roberto Almeida", leads: 30, vendas: 4, conversao: 13.3, tempoResposta: "20min", tempoVenda: "40 dias" },
-];
-
-const slaData = [
-  { name: "Seg", dentro: 85, fora: 15 },
-  { name: "Ter", dentro: 90, fora: 10 },
-  { name: "Qua", dentro: 78, fora: 22 },
-  { name: "Qui", dentro: 92, fora: 8 },
-  { name: "Sex", dentro: 88, fora: 12 },
-  { name: "Sáb", dentro: 75, fora: 25 },
-  { name: "Dom", dentro: 95, fora: 5 },
-];
 
 const pieColors = ["hsl(270,80%,60%)", "hsl(320,72%,55%)", "hsl(200,70%,50%)", "hsl(150,60%,45%)", "hsl(40,80%,55%)"];
 
@@ -72,18 +39,40 @@ const periods = [
   { value: "personalizado", label: "Personalizado" },
 ];
 
-// ── KPI Cards ──────────────────────────────────────────────
-const kpis = [
-  { label: "VGV Total", value: "R$ 12.8M", change: "+12%", icon: TrendingUp },
-  { label: "Vendas", value: "42", change: "+8%", icon: BarChart3 },
-  { label: "Novos Leads", value: "298", change: "+23%", icon: Users },
-  { label: "Taxa Conversão", value: "8.2%", change: "+1.4%", icon: Target },
-  { label: "Tempo de Resposta", value: "14min", change: "-3min", icon: Clock },
-  { label: "SLA Cumprido", value: "87%", change: "+5%", icon: MessageSquare },
-];
+function getDateRange(period: string, dateFrom?: Date, dateTo?: Date) {
+  const now = new Date();
+  let from: Date;
+  let to = now;
+  switch (period) {
+    case "dia": from = startOfDay(now); break;
+    case "semana": from = startOfWeek(now, { weekStartsOn: 1 }); break;
+    case "quinzenal": from = subDays(now, 14); break;
+    case "mensal": from = startOfMonth(now); break;
+    case "trimestral": from = startOfQuarter(now); break;
+    case "personalizado":
+      from = dateFrom || subMonths(now, 1);
+      to = dateTo || now;
+      break;
+    default: from = startOfMonth(now);
+  }
+  return { from, to };
+}
+
+function inRange(dateStr: string | null | undefined, from: Date, to: Date) {
+  if (!dateStr) return false;
+  const d = parseISO(dateStr);
+  return !isBefore(d, from) && !isAfter(d, to);
+}
+
+const fmtCurrency = (v: number) => {
+  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(0)}K`;
+  return `R$ ${v.toFixed(0)}`;
+};
 
 const Reports = () => {
   const { toast } = useToast();
+  const { company } = useAuth();
   const [period, setPeriod] = useState("mensal");
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
@@ -93,32 +82,231 @@ const Reports = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("visao-geral");
 
-  const handleExport = (format: string) => {
-    toast({ title: `Exportando ${format.toUpperCase()}`, description: "Relatório será gerado em instantes." });
+  const companyId = company?.id;
+
+  // Fetch all data in parallel
+  const { data: leads = [], isLoading: loadingLeads } = useQuery({
+    queryKey: ["report_leads", companyId],
+    queryFn: async () => {
+      const { data } = await supabase.from("pipeline_leads")
+        .select("*, assigned_broker:brokers!pipeline_leads_assigned_broker_id_fkey(id, name)")
+        .eq("company_id", companyId!);
+      return data ?? [];
+    },
+    enabled: !!companyId,
+  });
+
+  const { data: proposals = [], isLoading: loadingProposals } = useQuery({
+    queryKey: ["report_proposals", companyId],
+    queryFn: async () => {
+      const { data } = await supabase.from("proposals").select("*").eq("company_id", companyId!);
+      return data ?? [];
+    },
+    enabled: !!companyId,
+  });
+
+  const { data: contacts = [], isLoading: loadingContacts } = useQuery({
+    queryKey: ["report_contacts", companyId],
+    queryFn: async () => {
+      const { data } = await supabase.from("contacts").select("*").eq("company_id", companyId!);
+      return data ?? [];
+    },
+    enabled: !!companyId,
+  });
+
+  const { data: properties = [] } = useQuery({
+    queryKey: ["report_properties", companyId],
+    queryFn: async () => {
+      const { data } = await supabase.from("properties").select("id, sale_price, rent_price, status, created_at, assigned_broker_id, broker_id").eq("company_id", companyId!);
+      return data ?? [];
+    },
+    enabled: !!companyId,
+  });
+
+  const { data: visits = [] } = useQuery({
+    queryKey: ["report_visits", companyId],
+    queryFn: async () => {
+      const { data } = await supabase.from("visits").select("*").eq("company_id", companyId!);
+      return data ?? [];
+    },
+    enabled: !!companyId,
+  });
+
+  const { data: brokers = [] } = useQuery({
+    queryKey: ["report_brokers", companyId],
+    queryFn: async () => {
+      const { data } = await supabase.from("brokers").select("*").eq("company_id", companyId!).eq("is_active", true);
+      return data ?? [];
+    },
+    enabled: !!companyId,
+  });
+
+  const { data: goals = [] } = useQuery({
+    queryKey: ["report_goals", companyId],
+    queryFn: async () => {
+      const { data } = await supabase.from("broker_goals").select("*").eq("company_id", companyId!);
+      return data ?? [];
+    },
+    enabled: !!companyId,
+  });
+
+  const loading = loadingLeads || loadingProposals || loadingContacts;
+
+  // Compute date range
+  const { from: rangeFrom, to: rangeTo } = useMemo(() => getDateRange(period, dateFrom, dateTo), [period, dateFrom, dateTo]);
+
+  // Filtered data by period
+  const filteredLeads = useMemo(() => leads.filter(l => inRange(l.created_at, rangeFrom, rangeTo)), [leads, rangeFrom, rangeTo]);
+  const filteredProposals = useMemo(() => proposals.filter(p => inRange(p.created_at, rangeFrom, rangeTo)), [proposals, rangeFrom, rangeTo]);
+  const filteredContacts = useMemo(() => contacts.filter(c => inRange(c.created_at, rangeFrom, rangeTo)), [contacts, rangeFrom, rangeTo]);
+  const filteredVisits = useMemo(() => visits.filter(v => inRange(v.created_at, rangeFrom, rangeTo)), [visits, rangeFrom, rangeTo]);
+
+  // KPIs
+  const wonLeads = useMemo(() => filteredLeads.filter(l => l.won_at), [filteredLeads]);
+  const vgv = useMemo(() => {
+    return filteredProposals
+      .filter(p => p.status === "Aprovada")
+      .reduce((sum, p) => sum + Number(p.value || 0), 0);
+  }, [filteredProposals]);
+
+  const conversionRate = useMemo(() => {
+    if (filteredLeads.length === 0) return 0;
+    return (wonLeads.length / filteredLeads.length) * 100;
+  }, [filteredLeads, wonLeads]);
+
+  const kpis = useMemo(() => [
+    { label: "VGV Total", value: fmtCurrency(vgv), icon: TrendingUp },
+    { label: "Vendas (Ganhos)", value: String(wonLeads.length), icon: BarChart3 },
+    { label: "Novos Leads", value: String(filteredLeads.length), icon: Users },
+    { label: "Taxa Conversão", value: `${conversionRate.toFixed(1)}%`, icon: Target },
+    { label: "Visitas", value: String(filteredVisits.length), icon: Calendar },
+    { label: "Propostas", value: String(filteredProposals.length), icon: FileText },
+  ], [vgv, wonLeads, filteredLeads, conversionRate, filteredVisits, filteredProposals]);
+
+  // Monthly chart data (last 6 months)
+  const monthlyData = useMemo(() => {
+    const months: { name: string; vendas: number; leads: number; propostas: number; vgv: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = subMonths(new Date(), i);
+      const mStart = startOfMonth(d);
+      const mEnd = i === 0 ? new Date() : startOfMonth(subMonths(new Date(), i - 1));
+      const mLabel = format(d, "MMM", { locale: ptBR });
+      const mLeads = leads.filter(l => inRange(l.created_at, mStart, mEnd));
+      const mWon = mLeads.filter(l => l.won_at);
+      const mProposals = proposals.filter(p => inRange(p.created_at, mStart, mEnd));
+      const mVgv = mProposals.filter(p => p.status === "Aprovada").reduce((s, p) => s + Number(p.value || 0), 0);
+      months.push({ name: mLabel, vendas: mWon.length, leads: mLeads.length, propostas: mProposals.length, vgv: mVgv });
+    }
+    return months;
+  }, [leads, proposals]);
+
+  // Conversion funnel
+  const funnelData = useMemo(() => {
+    const totalLeads = filteredLeads.length;
+    const qualified = filteredLeads.filter(l => l.temperature === "hot" || l.temperature === "warm").length;
+    const visitCount = filteredVisits.length;
+    const proposalCount = filteredProposals.length;
+    const salesCount = wonLeads.length;
+    return [
+      { name: "Leads", value: totalLeads },
+      { name: "Qualificados", value: qualified },
+      { name: "Visitas", value: visitCount },
+      { name: "Propostas", value: proposalCount },
+      { name: "Vendas", value: salesCount },
+    ];
+  }, [filteredLeads, filteredVisits, filteredProposals, wonLeads]);
+
+  // Broker performance
+  const teamPerformance = useMemo(() => {
+    return brokers.map(b => {
+      const bLeads = filteredLeads.filter(l => l.assigned_broker_id === b.id);
+      const bWon = bLeads.filter(l => l.won_at);
+      const conv = bLeads.length > 0 ? (bWon.length / bLeads.length) * 100 : 0;
+      return { name: b.name, leads: bLeads.length, vendas: bWon.length, conversao: conv };
+    }).filter(b => b.leads > 0 || b.vendas > 0).sort((a, b) => b.vendas - a.vendas);
+  }, [brokers, filteredLeads]);
+
+  // Contact stats
+  const contactStats = useMemo(() => {
+    const total = contacts.length;
+    const newThisPeriod = filteredContacts.length;
+    const active = contacts.filter(c => c.status === "Ativo").length;
+    const inactive = contacts.filter(c => c.status === "Inativo").length;
+    return { total, newThisPeriod, active, inactive };
+  }, [contacts, filteredContacts]);
+
+  // Contact types pie
+  const contactTypePie = useMemo(() => {
+    const types: Record<string, number> = {};
+    contacts.forEach(c => { types[c.type || "Lead"] = (types[c.type || "Lead"] || 0) + 1; });
+    return Object.entries(types).map(([name, value]) => ({ name, value }));
+  }, [contacts]);
+
+  // Goals data
+  const currentMonthGoals = useMemo(() => {
+    const currentMonth = format(new Date(), "yyyy-MM-01");
+    return goals.filter(g => g.month === currentMonth);
+  }, [goals]);
+
+  const goalsSummary = useMemo(() => {
+    const targetVgv = currentMonthGoals.reduce((s, g) => s + Number(g.target_value || 0), 0);
+    const achievedVgv = currentMonthGoals.reduce((s, g) => s + Number(g.achieved_value || 0), 0);
+    const targetSales = currentMonthGoals.reduce((s, g) => s + Number(g.sales_count || 0), 0);
+    const targetLeads = currentMonthGoals.reduce((s, g) => s + Number(g.leads_count || 0), 0);
+    return [
+      { title: "VGV", atual: achievedVgv, meta: targetVgv || 1, unit: "", prefix: "" },
+      { title: "Vendas (Ganhos)", atual: wonLeads.length, meta: targetSales || 1, unit: "vendas" },
+      { title: "Novos Leads", atual: filteredLeads.length, meta: targetLeads || 1, unit: "leads" },
+      { title: "Visitas", atual: filteredVisits.length, meta: Math.max(filteredVisits.length, 1), unit: "visitas" },
+      { title: "Propostas", atual: filteredProposals.length, meta: Math.max(filteredProposals.length, 1), unit: "propostas" },
+      { title: "Conversão", atual: conversionRate, meta: 10, unit: "%" },
+    ];
+  }, [currentMonthGoals, wonLeads, filteredLeads, filteredVisits, filteredProposals, conversionRate]);
+
+  // Properties stats
+  const propertyStats = useMemo(() => {
+    const sold = properties.filter(p => p.status === "vendido").length;
+    const rented = properties.filter(p => p.status === "alugado").length;
+    const active = properties.filter(p => p.status === "ativo").length;
+    return { total: properties.length, sold, rented, active };
+  }, [properties]);
+
+  const handleExport = (fmt: string) => {
+    toast({ title: `Exportando ${fmt.toUpperCase()}`, description: "Relatório será gerado em instantes." });
   };
 
   const handleAIReport = () => {
-    if (!aiPrompt.trim()) {
-      toast({ title: "Digite uma solicitação", variant: "destructive" });
-      return;
-    }
+    if (!aiPrompt.trim()) { toast({ title: "Digite uma solicitação", variant: "destructive" }); return; }
     setAiLoading(true);
-    // Simulate AI response
     setTimeout(() => {
       setAiResult(
-        `📊 **Análise Gerada por IA**\n\n` +
-        `Com base nos dados do período selecionado (${periods.find(p => p.value === period)?.label}):\n\n` +
-        `• O time apresentou crescimento de 12% no VGV comparado ao período anterior.\n` +
-        `• Carlos Mendes e Fernanda Lima lideram em conversão, ambos acima de 15%.\n` +
-        `• O tempo médio de resposta está em 14 minutos, dentro do SLA de 30 minutos em 87% dos casos.\n` +
-        `• Recomendação: investir em leads da zona sul de SP, que representam 40% das conversões.\n` +
-        `• Oportunidade: o segmento de coberturas tem ticket médio 3x maior, mas recebe apenas 8% dos leads.\n\n` +
-        `⏱️ Tempo médio de venda: 34 dias (meta: 30 dias) — sugere-se revisar o follow-up pós-visita.\n\n` +
+        `📊 **Análise Gerada**\n\n` +
+        `Com base nos dados reais do período selecionado (${periods.find(p => p.value === period)?.label}):\n\n` +
+        `• Total de leads no período: ${filteredLeads.length}\n` +
+        `• Leads ganhos: ${wonLeads.length}\n` +
+        `• VGV aprovado: ${fmtCurrency(vgv)}\n` +
+        `• Taxa de conversão: ${conversionRate.toFixed(1)}%\n` +
+        `• Visitas realizadas: ${filteredVisits.length}\n` +
+        `• Propostas enviadas: ${filteredProposals.length}\n` +
+        `• Contatos ativos: ${contactStats.active} de ${contactStats.total}\n` +
+        `• Imóveis ativos: ${propertyStats.active} | Vendidos: ${propertyStats.sold} | Alugados: ${propertyStats.rented}\n\n` +
         `Solicitação original: "${aiPrompt}"`
       );
       setAiLoading(false);
-    }, 2500);
+    }, 1500);
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-5">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
+        </div>
+        <Skeleton className="h-[350px]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -129,7 +317,6 @@ const Reports = () => {
           <p className="text-sm text-muted-foreground">Análise de desempenho e métricas</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {/* Period selector */}
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-[160px]">
               <Calendar size={14} className="mr-1.5 text-muted-foreground" />
@@ -142,7 +329,6 @@ const Reports = () => {
             </SelectContent>
           </Select>
 
-          {/* Custom date range */}
           {period === "personalizado" && (
             <div className="flex gap-2">
               <Popover>
@@ -192,7 +378,6 @@ const Reports = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-1">
                   <k.icon size={16} className="text-primary" />
-                  <span className="text-xs font-medium text-emerald-600">{k.change}</span>
                 </div>
                 <p className="text-xl font-bold text-foreground">{k.value}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{k.label}</p>
@@ -209,9 +394,7 @@ const Reports = () => {
           <TabsTrigger value="metas">Metas</TabsTrigger>
           <TabsTrigger value="vendas">Vendas</TabsTrigger>
           <TabsTrigger value="clientes">Clientes</TabsTrigger>
-          <TabsTrigger value="atendimento">Atendimento</TabsTrigger>
-          <TabsTrigger value="sla">SLA</TabsTrigger>
-          <TabsTrigger value="tempo">Tempo</TabsTrigger>
+          <TabsTrigger value="imoveis">Imóveis</TabsTrigger>
         </TabsList>
 
         {/* ── Visão Geral ── */}
@@ -219,7 +402,7 @@ const Reports = () => {
           <div className="grid gap-4 lg:grid-cols-2">
             <Card className="shadow-card border-border/50">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2"><BarChart3 size={16} className="text-primary" /> Vendas x Leads por mês</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2"><BarChart3 size={16} className="text-primary" /> Vendas x Leads (últimos 6 meses)</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={280}>
@@ -243,8 +426,8 @@ const Reports = () => {
               <CardContent>
                 <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
-                    <Pie data={conversionFunnel} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                      {conversionFunnel.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+                    <Pie data={funnelData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                      {funnelData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
                     </Pie>
                     <Tooltip />
                   </PieChart>
@@ -262,8 +445,8 @@ const Reports = () => {
                 <AreaChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(260,15%,90%)" />
                   <XAxis dataKey="name" fontSize={12} />
-                  <YAxis fontSize={12} tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`} />
-                  <Tooltip formatter={(v: number) => `R$ ${(v / 1000).toFixed(0)}K`} />
+                  <YAxis fontSize={12} tickFormatter={(v) => v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K` : String(v)} />
+                  <Tooltip formatter={(v: number) => fmtCurrency(v)} />
                   <Area type="monotone" dataKey="vgv" stroke="hsl(270,80%,60%)" fill="hsl(270,80%,60%)" fillOpacity={0.15} name="VGV" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -273,15 +456,17 @@ const Reports = () => {
 
         {/* ── Metas ── */}
         <TabsContent value="metas" className="space-y-4">
+          {currentMonthGoals.length === 0 && (
+            <Card className="shadow-card border-border/50">
+              <CardContent className="p-6 text-center text-muted-foreground">
+                <Target size={32} className="mx-auto mb-2 text-muted-foreground/50" />
+                <p className="text-sm">Nenhuma meta cadastrada para o mês atual.</p>
+                <p className="text-xs mt-1">Cadastre metas na seção de configurações ou no perfil do corretor.</p>
+              </CardContent>
+            </Card>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { title: "Vendas", atual: 42, meta: 50, unit: "imóveis" },
-              { title: "VGV", atual: 12.8, meta: 15, unit: "M", prefix: "R$ " },
-              { title: "Novos Leads", atual: 298, meta: 350, unit: "leads" },
-              { title: "Visitas", atual: 95, meta: 120, unit: "visitas" },
-              { title: "Propostas", atual: 42, meta: 60, unit: "propostas" },
-              { title: "Conversão", atual: 8.2, meta: 10, unit: "%" },
-            ].map((m) => {
+            {goalsSummary.map((m) => {
               const pct = Math.min(100, (m.atual / m.meta) * 100);
               return (
                 <Card key={m.title} className="shadow-card border-border/50">
@@ -294,7 +479,7 @@ const Reports = () => {
                       <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {m.prefix || ""}{m.atual}{m.unit === "%" ? "%" : ` ${m.unit}`} de {m.prefix || ""}{m.meta}{m.unit === "%" ? "%" : ` ${m.unit}`}
+                      {m.title === "VGV" ? fmtCurrency(m.atual) : m.atual}{m.unit === "%" ? "%" : ` ${m.unit}`} de {m.title === "VGV" ? fmtCurrency(m.meta) : m.meta}{m.unit === "%" ? "%" : ` ${m.unit}`}
                     </p>
                   </CardContent>
                 </Card>
@@ -306,7 +491,7 @@ const Reports = () => {
         {/* ── Vendas ── */}
         <TabsContent value="vendas" className="space-y-4">
           <Card className="shadow-card border-border/50">
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Evolução de Vendas</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">Evolução de Vendas (últimos 6 meses)</CardTitle></CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={monthlyData}>
@@ -322,28 +507,32 @@ const Reports = () => {
           <Card className="shadow-card border-border/50">
             <CardHeader className="pb-2"><CardTitle className="text-sm">Performance por Corretor</CardTitle></CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-2 font-medium text-muted-foreground">Corretor</th>
-                      <th className="text-center py-2 font-medium text-muted-foreground">Leads</th>
-                      <th className="text-center py-2 font-medium text-muted-foreground">Vendas</th>
-                      <th className="text-center py-2 font-medium text-muted-foreground">Conversão</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {teamPerformance.map((t) => (
-                      <tr key={t.name} className="border-b border-border/50">
-                        <td className="py-2.5 font-medium text-foreground">{t.name}</td>
-                        <td className="text-center text-muted-foreground">{t.leads}</td>
-                        <td className="text-center font-semibold text-foreground">{t.vendas}</td>
-                        <td className="text-center"><Badge variant={t.conversao >= 15 ? "default" : "secondary"}>{t.conversao}%</Badge></td>
+              {teamPerformance.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Nenhum dado de performance disponível no período.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 font-medium text-muted-foreground">Corretor</th>
+                        <th className="text-center py-2 font-medium text-muted-foreground">Leads</th>
+                        <th className="text-center py-2 font-medium text-muted-foreground">Vendas</th>
+                        <th className="text-center py-2 font-medium text-muted-foreground">Conversão</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {teamPerformance.map((t) => (
+                        <tr key={t.name} className="border-b border-border/50">
+                          <td className="py-2.5 font-medium text-foreground">{t.name}</td>
+                          <td className="text-center text-muted-foreground">{t.leads}</td>
+                          <td className="text-center font-semibold text-foreground">{t.vendas}</td>
+                          <td className="text-center"><Badge variant={t.conversao >= 15 ? "default" : "secondary"}>{t.conversao.toFixed(1)}%</Badge></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -352,10 +541,10 @@ const Reports = () => {
         <TabsContent value="clientes" className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: "Total Clientes", value: "186" },
-              { label: "Novos (mês)", value: "23" },
-              { label: "Ativos", value: "142" },
-              { label: "Inativos", value: "44" },
+              { label: "Total Contatos", value: String(contactStats.total) },
+              { label: "Novos (período)", value: String(contactStats.newThisPeriod) },
+              { label: "Ativos", value: String(contactStats.active) },
+              { label: "Inativos", value: String(contactStats.inactive) },
             ].map((c) => (
               <Card key={c.label} className="shadow-card border-border/50">
                 <CardContent className="p-4 text-center">
@@ -366,113 +555,41 @@ const Reports = () => {
             ))}
           </div>
           <Card className="shadow-card border-border/50">
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Leads por Origem</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">Contatos por Tipo</CardTitle></CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie data={[
-                    { name: "Site", value: 120 },
-                    { name: "Portais", value: 85 },
-                    { name: "Indicação", value: 55 },
-                    { name: "Redes Sociais", value: 40 },
-                    { name: "Outros", value: 18 },
-                  ]} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                    {[0, 1, 2, 3, 4].map((i) => <Cell key={i} fill={pieColors[i]} />)}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              {contactTypePie.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Nenhum contato cadastrado.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie data={contactTypePie} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                      {contactTypePie.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* ── Atendimento ── */}
-        <TabsContent value="atendimento" className="space-y-4">
-          <Card className="shadow-card border-border/50">
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Atendimentos por Mês</CardTitle></CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(260,15%,90%)" />
-                  <XAxis dataKey="name" fontSize={12} />
-                  <YAxis fontSize={12} />
-                  <Tooltip />
-                  <Bar dataKey="atendimentos" fill="hsl(200,70%,50%)" name="Atendimentos" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── SLA ── */}
-        <TabsContent value="sla" className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Card className="shadow-card border-border/50">
-              <CardContent className="p-4 text-center">
-                <p className="text-3xl font-bold text-foreground">87%</p>
-                <p className="text-xs text-muted-foreground mt-1">SLA Cumprido</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-card border-border/50">
-              <CardContent className="p-4 text-center">
-                <p className="text-3xl font-bold text-foreground">30min</p>
-                <p className="text-xs text-muted-foreground mt-1">Meta de Resposta</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-card border-border/50">
-              <CardContent className="p-4 text-center">
-                <p className="text-3xl font-bold text-foreground">14min</p>
-                <p className="text-xs text-muted-foreground mt-1">Média Atual</p>
-              </CardContent>
-            </Card>
-          </div>
-          <Card className="shadow-card border-border/50">
-            <CardHeader className="pb-2"><CardTitle className="text-sm">SLA por Dia da Semana (%)</CardTitle></CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={slaData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(260,15%,90%)" />
-                  <XAxis dataKey="name" fontSize={12} />
-                  <YAxis fontSize={12} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="dentro" fill="hsl(150,60%,45%)" name="Dentro do SLA" stackId="a" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="fora" fill="hsl(0,84%,60%)" name="Fora do SLA" stackId="a" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── Tempo ── */}
-        <TabsContent value="tempo" className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card className="shadow-card border-border/50">
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Tempo Médio de Resposta</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {teamPerformance.map((t) => (
-                    <div key={t.name} className="flex items-center justify-between">
-                      <span className="text-sm text-foreground">{t.name}</span>
-                      <Badge variant={parseInt(t.tempoResposta) <= 15 ? "default" : "secondary"}>{t.tempoResposta}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-card border-border/50">
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Tempo Médio de Venda</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {teamPerformance.map((t) => (
-                    <div key={t.name} className="flex items-center justify-between">
-                      <span className="text-sm text-foreground">{t.name}</span>
-                      <Badge variant={parseInt(t.tempoVenda) <= 30 ? "default" : "secondary"}>{t.tempoVenda}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+        {/* ── Imóveis ── */}
+        <TabsContent value="imoveis" className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label: "Total Imóveis", value: String(propertyStats.total), icon: Building2 },
+              { label: "Ativos", value: String(propertyStats.active), icon: Building2 },
+              { label: "Vendidos", value: String(propertyStats.sold), icon: TrendingUp },
+              { label: "Alugados", value: String(propertyStats.rented), icon: Target },
+            ].map((c) => (
+              <Card key={c.label} className="shadow-card border-border/50">
+                <CardContent className="p-4 text-center">
+                  <c.icon size={20} className="mx-auto mb-1 text-primary" />
+                  <p className="text-2xl font-bold text-foreground">{c.value}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{c.label}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </TabsContent>
       </Tabs>
@@ -489,7 +606,7 @@ const Reports = () => {
               <Textarea
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="Ex: Analise o desempenho de vendas do último trimestre e sugira ações para melhorar a conversão..."
+                placeholder="Ex: Analise o desempenho de vendas do último trimestre e sugira ações..."
                 rows={3}
               />
             </div>
