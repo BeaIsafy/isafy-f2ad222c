@@ -29,7 +29,11 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error("Unauthorized");
 
-    const { planId, paymentMethod, companyName, email, cpfCnpj, phone } = await req.json();
+    const {
+      planId, paymentMethod, companyName, email, cpfCnpj, phone,
+      // Credit card fields
+      cardName, cardNumber, cardExpiry, cardCvv,
+    } = await req.json();
 
     // 1. Get user's company
     const { data: profile } = await supabase
@@ -84,10 +88,40 @@ Deno.serve(async (req) => {
     const price = planPrices[planId];
     if (!price) throw new Error("Invalid plan ID");
 
-    // 5. Create Asaas subscription
+    // 5. Build subscription payload
     const nextDueDate = new Date();
     nextDueDate.setDate(nextDueDate.getDate() + 3); // 3-day trial
     const dueDateStr = nextDueDate.toISOString().split("T")[0];
+
+    const billingType = paymentMethod === "PIX" ? "PIX" : "CREDIT_CARD";
+
+    const subscriptionPayload: Record<string, unknown> = {
+      customer: asaasCustomerId,
+      billingType,
+      value: price,
+      nextDueDate: dueDateStr,
+      cycle: "MONTHLY",
+      description: `ISAFY - Plano ${planId}`,
+      externalReference: profile.company_id,
+    };
+
+    // For credit card, include card details
+    if (paymentMethod === "CREDIT_CARD" && cardNumber) {
+      const [expiryMonth, expiryYear] = (cardExpiry || "").split("/");
+      subscriptionPayload.creditCard = {
+        holderName: cardName,
+        number: cardNumber.replace(/\s/g, ""),
+        expiryMonth: expiryMonth?.trim(),
+        expiryYear: expiryYear?.trim()?.length === 2 ? `20${expiryYear.trim()}` : expiryYear?.trim(),
+        ccv: cardCvv,
+      };
+      subscriptionPayload.creditCardHolderInfo = {
+        name: cardName,
+        email: email,
+        cpfCnpj: cpfCnpj,
+        phone: phone,
+      };
+    }
 
     const subscriptionRes = await fetch(`${ASAAS_API_URL}/subscriptions`, {
       method: "POST",
@@ -95,15 +129,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
         access_token: ASAAS_API_KEY,
       },
-      body: JSON.stringify({
-        customer: asaasCustomerId,
-        billingType: paymentMethod === "PIX" ? "PIX" : "CREDIT_CARD",
-        value: price,
-        nextDueDate: dueDateStr,
-        cycle: "MONTHLY",
-        description: `ISAFY - Plano ${planId}`,
-        externalReference: profile.company_id,
-      }),
+      body: JSON.stringify(subscriptionPayload),
     });
 
     const subscriptionData = await subscriptionRes.json();
@@ -112,7 +138,66 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to create Asaas subscription: ${JSON.stringify(subscriptionData)}`);
     }
 
-    // 6. Upsert subscription in our DB
+    // 6. For PIX, fetch the first payment to get the invoice URL
+    let invoiceUrl: string | null = null;
+    let pixQrCodeUrl: string | null = null;
+
+    if (paymentMethod === "PIX") {
+      // Wait a moment for Asaas to generate the first payment
+      await new Promise((r) => setTimeout(r, 2000));
+
+      const paymentsRes = await fetch(
+        `${ASAAS_API_URL}/payments?subscription=${subscriptionData.id}&limit=1`,
+        {
+          headers: { access_token: ASAAS_API_KEY },
+        }
+      );
+      const paymentsData = await paymentsRes.json();
+
+      if (paymentsData?.data?.length > 0) {
+        const firstPayment = paymentsData.data[0];
+        invoiceUrl = firstPayment.invoiceUrl || null;
+
+        // Get PIX QR code
+        if (firstPayment.id) {
+          const pixRes = await fetch(
+            `${ASAAS_API_URL}/payments/${firstPayment.id}/pixQrCode`,
+            { headers: { access_token: ASAAS_API_KEY } }
+          );
+          if (pixRes.ok) {
+            const pixData = await pixRes.json();
+            pixQrCodeUrl = pixData.encodedImage || null;
+          }
+        }
+      }
+    }
+
+    // 7. For credit card, check if first payment was confirmed
+    let creditCardStatus: string | null = null;
+
+    if (paymentMethod === "CREDIT_CARD") {
+      await new Promise((r) => setTimeout(r, 2000));
+
+      const paymentsRes = await fetch(
+        `${ASAAS_API_URL}/payments?subscription=${subscriptionData.id}&limit=1`,
+        {
+          headers: { access_token: ASAAS_API_KEY },
+        }
+      );
+      const paymentsData = await paymentsRes.json();
+
+      if (paymentsData?.data?.length > 0) {
+        creditCardStatus = paymentsData.data[0].status; // CONFIRMED, PENDING, RECEIVED, etc.
+      }
+    }
+
+    // 8. Determine subscription status based on payment method
+    // DON'T set as "active" until webhook confirms payment
+    const isPaid = paymentMethod === "CREDIT_CARD" &&
+      (creditCardStatus === "CONFIRMED" || creditCardStatus === "RECEIVED");
+
+    const subStatus = isPaid ? "active" : "pending";
+
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 3);
 
@@ -121,7 +206,7 @@ Deno.serve(async (req) => {
       asaas_customer_id: asaasCustomerId,
       asaas_subscription_id: subscriptionData.id,
       plan_id: planId,
-      status: "active",
+      status: subStatus,
       trial_ends_at: trialEndsAt.toISOString(),
       current_period_start: new Date().toISOString(),
       current_period_end: trialEndsAt.toISOString(),
@@ -137,19 +222,32 @@ Deno.serve(async (req) => {
       await supabase.from("subscriptions").insert(subRecord);
     }
 
-    // 7. Update company plan
-    await supabase
-      .from("companies")
-      .update({ plan_id: planId, is_active: true, blocked_at: null })
-      .eq("id", profile.company_id);
+    // 9. Only activate company if payment is confirmed (credit card)
+    if (isPaid) {
+      await supabase
+        .from("companies")
+        .update({ plan_id: planId, is_active: true, blocked_at: null })
+        .eq("id", profile.company_id);
+    } else {
+      // Just update the plan_id, don't activate yet
+      await supabase
+        .from("companies")
+        .update({ plan_id: planId })
+        .eq("id", profile.company_id);
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         subscriptionId: subscriptionData.id,
         customerId: asaasCustomerId,
-        // If PIX, return the payment link from first invoice
-        paymentLink: subscriptionData.paymentLink || null,
+        paymentMethod,
+        // PIX-specific
+        invoiceUrl,
+        pixQrCodeUrl,
+        // Credit card-specific
+        creditCardStatus,
+        isPaid,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
