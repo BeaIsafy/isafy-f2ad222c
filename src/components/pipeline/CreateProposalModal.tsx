@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { parseCurrencyInput } from "@/utils/formatters";
 
 interface CreateProposalModalProps {
   open: boolean;
