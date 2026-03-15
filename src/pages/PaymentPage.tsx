@@ -10,6 +10,10 @@ import {
   ArrowRight,
   Sparkles,
   QrCode,
+  ExternalLink,
+  Loader2,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +26,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import logoIsafy from "@/assets/logo-isafy.png";
 
+type PaymentResult = {
+  paymentMethod: "CREDIT_CARD" | "PIX";
+  invoiceUrl?: string | null;
+  pixQrCodeUrl?: string | null;
+  creditCardStatus?: string | null;
+  isPaid?: boolean;
+} | null;
+
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -31,6 +43,7 @@ const PaymentPage = () => {
   const [showCheckout, setShowCheckout] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"CREDIT_CARD" | "PIX">("CREDIT_CARD");
   const [loading, setLoading] = useState(false);
+  const [paymentResult, setPaymentResult] = useState<PaymentResult>(null);
 
   // Form fields
   const [cpfCnpj, setCpfCnpj] = useState(company?.cnpj || "");
@@ -53,7 +66,16 @@ const PaymentPage = () => {
       return;
     }
 
+    if (paymentMethod === "CREDIT_CARD") {
+      if (!cardName.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim()) {
+        toast({ title: "Atenção", description: "Preencha todos os dados do cartão.", variant: "destructive" });
+        return;
+      }
+    }
+
     setLoading(true);
+    setPaymentResult(null);
+
     try {
       const { data, error } = await supabase.functions.invoke("create-asaas-subscription", {
         body: {
@@ -63,17 +85,54 @@ const PaymentPage = () => {
           email: profile?.email || user.email,
           cpfCnpj: cpfCnpj.replace(/\D/g, ""),
           phone: company.phone || profile?.phone || "",
+          // Credit card fields
+          cardName,
+          cardNumber: cardNumber.replace(/\s/g, ""),
+          cardExpiry,
+          cardCvv,
         },
       });
 
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || "Erro ao criar assinatura");
 
-      toast({
-        title: "Assinatura ativada!",
-        description: `Plano ${chosen.name} ativado com sucesso.`,
-      });
-      navigate("/dashboard");
+      if (paymentMethod === "PIX") {
+        // Show PIX result with invoice link
+        setPaymentResult({
+          paymentMethod: "PIX",
+          invoiceUrl: data.invoiceUrl,
+          pixQrCodeUrl: data.pixQrCodeUrl,
+        });
+
+        if (data.invoiceUrl) {
+          window.open(data.invoiceUrl, "_blank");
+        }
+
+        toast({
+          title: "Assinatura criada!",
+          description: "Abra a fatura para efetuar o pagamento via PIX.",
+        });
+      } else {
+        // Credit card
+        setPaymentResult({
+          paymentMethod: "CREDIT_CARD",
+          creditCardStatus: data.creditCardStatus,
+          isPaid: data.isPaid,
+        });
+
+        if (data.isPaid) {
+          toast({
+            title: "Pagamento confirmado!",
+            description: `Plano ${chosen.name} ativado com sucesso.`,
+          });
+          setTimeout(() => navigate("/dashboard"), 2000);
+        } else {
+          toast({
+            title: "Pagamento em processamento",
+            description: "Seu pagamento está sendo processado. Você será notificado quando for confirmado.",
+          });
+        }
+      }
     } catch (err: any) {
       console.error("Subscription error:", err);
       toast({
@@ -138,7 +197,13 @@ const PaymentPage = () => {
       {/* Plans / Checkout */}
       <div className="flex-1 px-6 py-8">
         <div className="mx-auto max-w-5xl">
-          {!showCheckout ? (
+          {paymentResult ? (
+            <PaymentResultView
+              result={paymentResult}
+              chosenName={chosen.name}
+              onGoToDashboard={() => navigate("/dashboard")}
+            />
+          ) : !showCheckout ? (
             <PlanSelector
               selectedPlan={selectedPlan}
               onSelectPlan={setSelectedPlan}
@@ -172,6 +237,104 @@ const PaymentPage = () => {
     </div>
   );
 };
+
+/* ───── Payment Result View ───── */
+function PaymentResultView({
+  result,
+  chosenName,
+  onGoToDashboard,
+}: {
+  result: NonNullable<PaymentResult>;
+  chosenName: string;
+  onGoToDashboard: () => void;
+}) {
+  if (result.paymentMethod === "PIX") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-lg space-y-6">
+        <Card className="shadow-card border-border/50 overflow-hidden">
+          <CardContent className="pt-8 pb-8 space-y-6 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <QrCode size={32} className="text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-foreground">Assinatura criada com sucesso!</h2>
+              <p className="text-muted-foreground text-sm">
+                Sua assinatura do plano <strong>{chosenName}</strong> foi criada. Efetue o pagamento via PIX para ativar seu acesso.
+              </p>
+            </div>
+
+            {result.invoiceUrl && (
+              <Button
+                className="w-full gradient-primary text-primary-foreground shadow-primary gap-2"
+                onClick={() => window.open(result.invoiceUrl!, "_blank")}
+              >
+                <ExternalLink size={16} /> Abrir Fatura para Pagamento
+              </Button>
+            )}
+
+            <Separator />
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock size={14} />
+                <span>Após o pagamento, seu acesso será liberado automaticamente.</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O webhook do Asaas confirmará o pagamento e ativará sua conta.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
+
+  // Credit Card result
+  const isPaid = result.isPaid;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-lg space-y-6">
+      <Card className="shadow-card border-border/50 overflow-hidden">
+        <CardContent className="pt-8 pb-8 space-y-6 text-center">
+          {isPaid ? (
+            <>
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
+                <CheckCircle2 size={32} className="text-emerald-500" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-foreground">Pagamento confirmado!</h2>
+                <p className="text-muted-foreground text-sm">
+                  Seu plano <strong>{chosenName}</strong> foi ativado com sucesso. Você será redirecionado para o dashboard.
+                </p>
+              </div>
+              <Button
+                className="w-full gradient-primary text-primary-foreground shadow-primary gap-2"
+                onClick={onGoToDashboard}
+              >
+                <ArrowRight size={16} /> Ir para o Dashboard
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10">
+                <Loader2 size={32} className="text-amber-500 animate-spin" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-foreground">Pagamento em processamento</h2>
+                <p className="text-muted-foreground text-sm">
+                  Seu pagamento do plano <strong>{chosenName}</strong> está sendo processado. Você será notificado quando for confirmado.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Status: <Badge variant="outline" className="text-amber-500 border-amber-500/50">{result.creditCardStatus || "Processando"}</Badge>
+                </p>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
 
 /* ───── Plan Selector ───── */
 function PlanSelector({
@@ -371,7 +534,7 @@ function CheckoutForm({
               <QrCode size={32} className="mx-auto text-primary" />
               <p className="text-sm text-foreground font-medium">Pagamento via PIX</p>
               <p className="text-xs text-muted-foreground">
-                Após confirmar, você receberá o QR Code para pagamento.
+                Após confirmar, a fatura será aberta para pagamento via PIX.
               </p>
             </div>
           )}
@@ -396,7 +559,9 @@ function CheckoutForm({
             disabled={loading}
           >
             {loading ? (
-              "Processando..."
+              <>
+                <Loader2 size={16} className="animate-spin" /> Processando...
+              </>
             ) : (
               <>
                 <Shield size={16} /> Assinar Plano {chosen.name}

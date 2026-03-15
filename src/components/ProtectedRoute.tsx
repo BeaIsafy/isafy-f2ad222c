@@ -43,12 +43,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (sub.status === "overdue") {
+      if (sub.status === "overdue" || sub.status === "cancelled") {
         setSubCheck("overdue");
         return;
       }
 
-      if (sub.status === "active" || sub.status === "trial") {
+      // active, trial, or pending (waiting for payment confirmation) are all OK
+      if (sub.status === "active" || sub.status === "trial" || sub.status === "pending") {
         setSubCheck("ok");
         return;
       }
