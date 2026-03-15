@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { formatPhone, formatCpfCnpj } from "@/utils/formatters";
 
 interface NewOwnerModalProps {
   open: boolean;
@@ -34,7 +35,7 @@ export function NewOwnerModal({ open, onClose }: NewOwnerModalProps) {
           </div>
           <div className="space-y-2">
             <Label>Telefone</Label>
-            <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(11) 99999-9999" />
+            <Input inputMode="tel" value={form.phone} onChange={(e) => set("phone", formatPhone(e.target.value))} placeholder="(11) 99999-9999" />
           </div>
           <div className="space-y-2">
             <Label>E-mail</Label>
@@ -42,7 +43,7 @@ export function NewOwnerModal({ open, onClose }: NewOwnerModalProps) {
           </div>
           <div className="space-y-2">
             <Label>CPF/CNPJ</Label>
-            <Input value={form.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" />
+            <Input inputMode="numeric" value={form.cpf} onChange={(e) => set("cpf", formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" />
           </div>
         </div>
         <DialogFooter>

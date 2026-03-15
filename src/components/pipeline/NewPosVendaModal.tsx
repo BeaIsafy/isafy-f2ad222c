@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
+import { formatPhone } from "@/utils/formatters";
 
 interface NewPosVendaModalProps {
   open: boolean;
@@ -29,7 +30,7 @@ export function NewPosVendaModal({ open, onClose, onConfirm }: NewPosVendaModalP
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label>Telefone</Label>
-              <Input placeholder="(11) 99999-0000" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+              <Input inputMode="tel" placeholder="(11) 99999-0000" value={form.phone} onChange={(e) => set("phone", formatPhone(e.target.value))} />
             </div>
             <div className="grid gap-2">
               <Label>E-mail</Label>

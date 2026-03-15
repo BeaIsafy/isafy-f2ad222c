@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Pencil } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { formatPhone } from "@/utils/formatters";
 
 interface EditContactModalProps {
   open: boolean;
@@ -39,7 +40,7 @@ export function EditContactModal({ open, onClose, data, onSave }: EditContactMod
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2"><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-          <div className="space-y-2"><Label>Telefone *</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+          <div className="space-y-2"><Label>Telefone *</Label><Input inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })} /></div>
           <div className="space-y-2"><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
           <div className="space-y-2"><Label>Origem</Label><Input value={form.origin} onChange={(e) => setForm({ ...form, origin: e.target.value })} /></div>
           <div className="space-y-2"><Label>Corretor</Label><Input value={form.broker} onChange={(e) => setForm({ ...form, broker: e.target.value })} /></div>

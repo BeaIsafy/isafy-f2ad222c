@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatPhone } from "@/utils/formatters";
 import { useNavigate } from "react-router-dom";
 import {
   User, Camera, Save, Target, Trash2, Lock, Eye, EyeOff,
@@ -340,7 +341,7 @@ const ProfilePage = () => {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">Telefone</label>
-                      <Input inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} className="mt-1" />
+                      <Input inputMode="tel" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} className="mt-1" />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">CRECI</label>

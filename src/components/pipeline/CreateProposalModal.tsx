@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { parseCurrencyInput } from "@/utils/formatters";
 
 interface CreateProposalModalProps {
   open: boolean;
@@ -54,7 +55,7 @@ export function CreateProposalModal({ open, onClose, leadName }: CreateProposalM
             </div>
             <div className="space-y-2">
               <Label>Valor da Proposta (R$) *</Label>
-              <Input inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} placeholder="500000" />
+              <Input inputMode="numeric" value={value} onChange={(e) => setValue(parseCurrencyInput(e.target.value).display)} placeholder="R$ 0,00" />
             </div>
             <div className="space-y-2">
               <Label>Forma de Pagamento</Label>
@@ -68,7 +69,7 @@ export function CreateProposalModal({ open, onClose, leadName }: CreateProposalM
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Entrada (R$)</Label>
-                  <Input inputMode="numeric" value={downPayment} onChange={(e) => setDownPayment(e.target.value)} placeholder="100000" />
+                  <Input inputMode="numeric" value={downPayment} onChange={(e) => setDownPayment(parseCurrencyInput(e.target.value).display)} placeholder="R$ 0,00" />
                 </div>
                 <div className="space-y-2">
                   <Label>Parcelas</Label>

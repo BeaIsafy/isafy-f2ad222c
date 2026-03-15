@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatPhone, formatCPF } from "@/utils/formatters";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -289,7 +290,7 @@ const Contacts = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Telefone *</Label>
-                <Input inputMode="tel" value={newContact.phone} onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })} placeholder="(11) 99999-9999" />
+                <Input inputMode="tel" value={newContact.phone} onChange={(e) => setNewContact({ ...newContact, phone: formatPhone(e.target.value) })} placeholder="(11) 99999-9999" />
               </div>
               <div className="space-y-1.5">
                 <Label>E-mail</Label>
@@ -299,7 +300,7 @@ const Contacts = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>CPF</Label>
-                <Input inputMode="numeric" value={newContact.cpf} onChange={(e) => setNewContact({ ...newContact, cpf: e.target.value })} placeholder="000.000.000-00" />
+                <Input inputMode="numeric" value={newContact.cpf} onChange={(e) => setNewContact({ ...newContact, cpf: formatCPF(e.target.value) })} placeholder="000.000.000-00" />
               </div>
               <div className="space-y-1.5">
                 <Label>Corretor responsável</Label>
