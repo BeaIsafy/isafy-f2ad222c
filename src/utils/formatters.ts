@@ -43,6 +43,15 @@ export function formatCNPJ(value: string): string {
 }
 
 /**
+ * Auto-detect and format CPF or CNPJ based on digit count
+ */
+export function formatCpfCnpj(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 11) return formatCPF(value);
+  return formatCNPJ(value);
+}
+
+/**
  * Format a phone number string ((00) 00000-0000)
  */
 export function formatPhone(value: string): string {
