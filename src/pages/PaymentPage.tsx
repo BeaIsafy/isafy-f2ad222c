@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { formatCpfCnpj } from "@/utils/formatters";
 import { plans } from "@/data/plansData";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";

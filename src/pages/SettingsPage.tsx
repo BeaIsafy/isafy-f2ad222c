@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatPhone, formatCNPJ } from "@/utils/formatters";
 import {
   Building2, Palette, Users, Plug, CreditCard, Search, Plus, Upload,
   Globe, Facebook, Chrome, ShoppingBag, ExternalLink, Check, Crown,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatPhone } from "@/utils/formatters";
 import { useNavigate } from "react-router-dom";
 import {
   User, Camera, Save, Target, Trash2, Lock, Eye, EyeOff,

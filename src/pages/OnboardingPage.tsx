@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { plans } from "@/data/plansData";
 import logoIsafy from "@/assets/logo-isafy.png";
+import { formatPhone, formatCNPJ } from "@/utils/formatters";
 
 // ── Step definitions ──────────────────────────────────────
 const steps = [
