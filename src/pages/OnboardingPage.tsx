@@ -51,7 +51,7 @@ const StepEmpresa = ({ data, onChange }: { data: any; onChange: (d: any) => void
       </div>
       <div>
         <label className="text-sm font-medium text-foreground">CNPJ</label>
-        <Input className="mt-1" placeholder="00.000.000/0001-00" value={data.cnpj || ""} onChange={(e) => onChange({ ...data, cnpj: e.target.value })} />
+        <Input className="mt-1" inputMode="numeric" placeholder="00.000.000/0001-00" value={data.cnpj || ""} onChange={(e) => onChange({ ...data, cnpj: formatCNPJ(e.target.value) })} />
       </div>
       <div>
         <label className="text-sm font-medium text-foreground">CRECI</label>
