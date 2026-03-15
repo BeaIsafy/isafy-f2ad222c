@@ -43,7 +43,7 @@ export function NewClientModal({ open, onClose }: NewClientModalProps) {
           </div>
           <div className="space-y-2">
             <Label>CPF</Label>
-            <Input value={form.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" />
+            <Input inputMode="numeric" value={form.cpf} onChange={(e) => set("cpf", formatCPF(e.target.value))} placeholder="000.000.000-00" />
           </div>
         </div>
         <DialogFooter>

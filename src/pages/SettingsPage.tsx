@@ -86,7 +86,7 @@ function EmpresaTab() {
           <div><label className="text-sm font-medium text-foreground">Nome Fantasia</label><Input value={name} onChange={e => setName(e.target.value)} placeholder="Sua Imobiliária" className="mt-1" /></div>
           <div><label className="text-sm font-medium text-foreground">CNPJ</label><Input inputMode="numeric" value={cnpj} onChange={e => setCnpj(formatCNPJ(e.target.value))} placeholder="00.000.000/0001-00" className="mt-1" /></div>
           <div><label className="text-sm font-medium text-foreground">CRECI</label><Input value={creci} onChange={e => setCreci(e.target.value)} placeholder="000000-J" className="mt-1" /></div>
-          <div><label className="text-sm font-medium text-foreground">Telefone</label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(11) 99999-9999" className="mt-1" /></div>
+          <div><label className="text-sm font-medium text-foreground">Telefone</label><Input inputMode="tel" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} placeholder="(11) 99999-9999" className="mt-1" /></div>
           <div><label className="text-sm font-medium text-foreground">E-mail Principal</label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder="contato@imob.com" className="mt-1" /></div>
         </CardContent>
       </Card>

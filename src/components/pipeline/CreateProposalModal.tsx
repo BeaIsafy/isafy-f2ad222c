@@ -69,7 +69,7 @@ export function CreateProposalModal({ open, onClose, leadName }: CreateProposalM
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Entrada (R$)</Label>
-                  <Input inputMode="numeric" value={downPayment} onChange={(e) => setDownPayment(e.target.value)} placeholder="100000" />
+                  <Input inputMode="numeric" value={downPayment} onChange={(e) => setDownPayment(parseCurrencyInput(e.target.value).display)} placeholder="R$ 0,00" />
                 </div>
                 <div className="space-y-2">
                   <Label>Parcelas</Label>

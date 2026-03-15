@@ -299,7 +299,7 @@ const Contacts = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>CPF</Label>
-                <Input inputMode="numeric" value={newContact.cpf} onChange={(e) => setNewContact({ ...newContact, cpf: e.target.value })} placeholder="000.000.000-00" />
+                <Input inputMode="numeric" value={newContact.cpf} onChange={(e) => setNewContact({ ...newContact, cpf: formatCPF(e.target.value) })} placeholder="000.000.000-00" />
               </div>
               <div className="space-y-1.5">
                 <Label>Corretor responsável</Label>

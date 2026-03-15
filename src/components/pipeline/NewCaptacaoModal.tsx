@@ -58,7 +58,7 @@ export function NewCaptacaoModal({ open, onClose, onConfirm }: NewCaptacaoModalP
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label>Valor Estimado</Label>
-              <Input inputMode="numeric" placeholder="R$ 0" value={form.estimatedValue} onChange={(e) => set("estimatedValue", e.target.value)} />
+              <Input inputMode="numeric" placeholder="R$ 0" value={form.estimatedValue} onChange={(e) => set("estimatedValue", parseCurrencyInput(e.target.value).display)} />
             </div>
             <div className="grid gap-2">
               <Label>Comissão (%)</Label>

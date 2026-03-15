@@ -59,7 +59,7 @@ const StepEmpresa = ({ data, onChange }: { data: any; onChange: (d: any) => void
       </div>
       <div>
         <label className="text-sm font-medium text-foreground">Telefone</label>
-        <Input className="mt-1" placeholder="(11) 99999-0000" value={data.phone || ""} onChange={(e) => onChange({ ...data, phone: e.target.value })} />
+        <Input className="mt-1" inputMode="tel" placeholder="(11) 99999-0000" value={data.phone || ""} onChange={(e) => onChange({ ...data, phone: formatPhone(e.target.value) })} />
       </div>
       <div>
         <label className="text-sm font-medium text-foreground">E-mail comercial</label>

@@ -498,7 +498,7 @@ function CheckoutForm({
           {/* CPF/CNPJ always required */}
           <div>
             <label className="text-xs font-medium text-foreground">CPF ou CNPJ</label>
-            <Input className="mt-1" placeholder="000.000.000-00" value={cpfCnpj} onChange={(e) => setCpfCnpj(e.target.value)} />
+            <Input className="mt-1" inputMode="numeric" placeholder="000.000.000-00" value={cpfCnpj} onChange={(e) => setCpfCnpj(formatCpfCnpj(e.target.value))} />
           </div>
 
           {/* Card fields only for credit card */}

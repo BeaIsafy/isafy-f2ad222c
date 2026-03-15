@@ -56,7 +56,7 @@ export function NewLeadModal({ open, onClose, onConfirm }: NewLeadModalProps) {
             </div>
             <div className="grid gap-2">
               <Label>Preço Máximo</Label>
-              <Input inputMode="numeric" placeholder="R$ 0" value={form.maxPrice} onChange={(e) => set("maxPrice", e.target.value)} />
+              <Input inputMode="numeric" placeholder="R$ 0" value={form.maxPrice} onChange={(e) => set("maxPrice", parseCurrencyInput(e.target.value).display)} />
             </div>
           </div>
           <div className="grid gap-2">

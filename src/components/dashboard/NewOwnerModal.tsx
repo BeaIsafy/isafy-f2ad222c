@@ -43,7 +43,7 @@ export function NewOwnerModal({ open, onClose }: NewOwnerModalProps) {
           </div>
           <div className="space-y-2">
             <Label>CPF/CNPJ</Label>
-            <Input value={form.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" />
+            <Input inputMode="numeric" value={form.cpf} onChange={(e) => set("cpf", formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" />
           </div>
         </div>
         <DialogFooter>
