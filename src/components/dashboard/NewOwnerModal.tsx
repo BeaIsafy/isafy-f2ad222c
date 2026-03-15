@@ -35,7 +35,7 @@ export function NewOwnerModal({ open, onClose }: NewOwnerModalProps) {
           </div>
           <div className="space-y-2">
             <Label>Telefone</Label>
-            <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(11) 99999-9999" />
+            <Input inputMode="tel" value={form.phone} onChange={(e) => set("phone", formatPhone(e.target.value))} placeholder="(11) 99999-9999" />
           </div>
           <div className="space-y-2">
             <Label>E-mail</Label>
