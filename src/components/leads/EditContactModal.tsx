@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Pencil } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { formatPhone } from "@/utils/formatters";
 
 interface EditContactModalProps {
   open: boolean;
